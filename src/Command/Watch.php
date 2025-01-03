@@ -7,10 +7,8 @@ namespace PRSW\SwarmIngress\Command;
 use PRSW\Docker\Client;
 use PRSW\Docker\Generated\Model\EventMessage;
 use PRSW\Docker\Model\Stream;
-use PRSW\SwarmIngress\Ingress\Service;
-use PRSW\SwarmIngress\Registry\Initializer;
-use PRSW\SwarmIngress\Registry\RegistryManager;
-use PRSW\SwarmIngress\TableCache\UpstreamTable;
+use PRSW\SwarmIngress\Ingress\ServiceBuilder;
+use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,8 +20,8 @@ final class Watch extends Command
     public function __construct(
         private readonly LoggerInterface $logger,
         private readonly Client $docker,
-        private readonly UpstreamTable $upstreamTable,
-        private readonly RegistryManager $registryManager
+        private readonly RegistryManagerInterface $registryManager,
+        private readonly ServiceBuilder $serviceBuilder,
     ) {
         parent::__construct('watch');
     }
@@ -34,10 +32,11 @@ final class Watch extends Command
 
         $filters = json_encode([
             'type' => [
-                'container',
+                'container', 'service',
             ],
             'event' => [
                 'start', 'kill',
+                'create', 'remove',
             ],
         ]);
 
@@ -45,36 +44,27 @@ final class Watch extends Command
 
         $eventStream = $this->docker->systemEvents(['filters' => $filters], Client::FETCH_STREAM);
 
-        if ($this->registryManager->registry instanceof Initializer) {
-            $this->registryManager->registry->init();
-        }
+        $this->registryManager->init();
 
         if ($eventStream instanceof Stream) {
             /** @var EventMessage $event */
             foreach ($eventStream->stream() as $event) {
                 try {
-                    $container = $this->docker->containerInspect($event->getActor()->getID());
-                    $service = Service::fromDockerContainer($container);
+                    $service = $this->serviceBuilder->build($event);
 
-                    $func = match (true) {
-                        'start' === $event->getAction() => function () use ($service) {
-                            $this->registryManager->onContainerStart($service);
-                            $this->upstreamTable->addUpstream($service->getTableKey(), $service->upstream);
-                            $this->logger->debug('Service Registered {service}', [
-                                'service' => (string) $service,
-                            ]);
-                        },
-                        'kill' === $event->getAction() => function () use ($service) {
-                            $this->registryManager->onContainerKill($service);
-                            $this->upstreamTable->removeUpstream($service->getTableKey(), $service->upstream);
-                            $this->logger->debug('Service Deregistered {service}', [
-                                'service' => (string) $service,
-                            ]);
-                        },
-                        default => throw new \InvalidArgumentException('Invalid docker event')
-                    };
+                    $eventName = sprintf(
+                        'on%s%s',
+                        ucfirst($event->getType()),
+                        ucfirst($event->getAction())
+                    );
 
-                    $func();
+                    var_dump($service);
+
+                    if (!method_exists($this->registryManager, $eventName)) {
+                        throw new \InvalidArgumentException('invalid docker event');
+                    }
+
+                    $this->registryManager->{$eventName}($service);
                 } catch (\Exception $e) {
                     $io->warning($e->getMessage());
 

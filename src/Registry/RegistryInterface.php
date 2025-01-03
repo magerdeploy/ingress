@@ -6,9 +6,7 @@ namespace PRSW\SwarmIngress\Registry;
 
 interface RegistryInterface
 {
-    public function addVirtualHost(string $domain, string $path, string $upstream): void;
+    public function addService(string $domain, string $path, string $upstream): void;
 
-    public function removeVirtualHost(string $domain, string $path, string $upstream): void;
-
-    public function refreshSSLCertificate(string $domain): void;
+    public function removeService(string $domain, string $path, string $upstream): void;
 }

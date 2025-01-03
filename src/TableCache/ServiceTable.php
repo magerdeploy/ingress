@@ -7,7 +7,7 @@ namespace PRSW\SwarmIngress\TableCache;
 use PRSW\SwarmIngress\Store\StorageInterface;
 use Swoole\Table;
 
-final class UpstreamTable extends AbstractTable
+final class ServiceTable extends AbstractTable
 {
     public function addUpstream(string $key, string $upstream): void
     {
@@ -15,8 +15,7 @@ final class UpstreamTable extends AbstractTable
         if (empty($upstreamList)) {
             $upstreamList = [];
             $upstreamList[$upstream] = 1;
-            $json = json_encode($upstreamList);
-            $this->set($key, ['upstream' => $json]);
+            $this->set($key, ['upstream' => $upstreamList]);
 
             return;
         }
@@ -27,8 +26,7 @@ final class UpstreamTable extends AbstractTable
         }
 
         $decoded[$upstream] = 1;
-        $json = json_encode($decoded);
-        $this->set($key, ['upstream' => $json]);
+        $this->set($key, ['upstream' => $decoded]);
     }
 
     public function removeUpstream(string $key, string $upstream): void
@@ -51,8 +49,7 @@ final class UpstreamTable extends AbstractTable
             return;
         }
 
-        $json = json_encode($decoded);
-        $this->set($key, ['upstream' => $json]);
+        $this->set($key, ['upstream' => $decoded]);
     }
 
     /**
@@ -70,7 +67,7 @@ final class UpstreamTable extends AbstractTable
 
     public function getName(): string
     {
-        return 'upstream';
+        return 'service';
     }
 
     public static function createTable(StorageInterface $storage, int $numOfRow = 1024, int $upstreamSize = 1024): self

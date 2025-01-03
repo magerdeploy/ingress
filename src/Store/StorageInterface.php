@@ -22,6 +22,4 @@ interface StorageInterface
      * @return array<string, array<string, string>>
      */
     public function load(string $prefix): array;
-
-    public function getLockClass(): string;
 }

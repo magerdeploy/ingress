@@ -11,4 +11,6 @@ interface LockInterface
     public function release(): void;
 
     public function setKey(string $key): void;
+
+    public function createLock(): self;
 }

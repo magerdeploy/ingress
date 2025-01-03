@@ -16,7 +16,13 @@ abstract class AbstractTable extends Table
      */
     public function set(string $key, array $value, bool $writeToStorage = true): bool
     {
-        $success = parent::set($key, $value);
+        $encodedValue = [];
+        foreach ($value as $k => $v) {
+            if (is_array(is_array($v))) {
+                $encodedValue[$k] = json_encode($v);
+            }
+        }
+        $success = parent::set($key, $encodedValue);
         if ($success && $writeToStorage) {
             return $this->storage->set($this->getName(), $key, $value);
         }
@@ -38,7 +44,12 @@ abstract class AbstractTable extends Table
     {
         $fromStorage = $this->storage->load($this->getName());
         foreach ($fromStorage as $key => $value) {
-            parent::set($key, $value);
+            foreach ($value as $k => $v) {
+                if (is_array($v)) {
+                    $value = json_encode($v);
+                }
+                parent::set($key, [$k => $value]);
+            }
         }
     }
 

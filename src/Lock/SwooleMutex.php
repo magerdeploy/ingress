@@ -6,13 +6,13 @@ namespace PRSW\SwarmIngress\Lock;
 
 use Swoole\Lock;
 
-final readonly class SwooleMutex implements LockInterface
+final class SwooleMutex implements LockInterface
 {
-    private Lock $lock;
+    private ?Lock $lock;
 
     public function __construct()
     {
-        $this->lock = new Lock();
+        $this->lock = null;
     }
 
     public function setKey(string $key): void {}
@@ -25,5 +25,12 @@ final readonly class SwooleMutex implements LockInterface
     public function release(): void
     {
         $this->lock->unlock();
+    }
+
+    public function createLock(): LockInterface
+    {
+        $this->lock = new Lock();
+
+        return $this;
     }
 }

@@ -9,16 +9,19 @@ use AcmePhp\Ssl\KeyPair;
 use AcmePhp\Ssl\PrivateKey;
 use AcmePhp\Ssl\PublicKey;
 use PRSW\Docker\Client;
-use PRSW\SwarmIngress\Registry\Nginx;
+use PRSW\SwarmIngress\Lock\LockInterface;
+use PRSW\SwarmIngress\Lock\SwooleMutex;
+use PRSW\SwarmIngress\Registry\Nginx\Registry;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
+use PRSW\SwarmIngress\Registry\RegistryManager;
+use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
 use PRSW\SwarmIngress\Store\FileStorage;
 use PRSW\SwarmIngress\Store\StorageInterface;
 use PRSW\SwarmIngress\TableCache\ConfigTable;
+use PRSW\SwarmIngress\TableCache\ServiceTable;
 use PRSW\SwarmIngress\TableCache\SSLCertificateTable;
-use PRSW\SwarmIngress\TableCache\UpstreamTable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Swoole\Lock;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -33,23 +36,20 @@ final class ContainerDefinition
     public static function getDefinition(): array
     {
         return [
-            'storage' => static fn (ContainerInterface $container) => [
-                FileStorage::class,
-                [
-                    'lock' => $container->get(Lock::class),
-                    'path' => __DIR__.'/../data',
-                ],
+            'registry' => $_ENV['registry'] ?? 'nginx',
+            'storage' => $_ENV['storage'] ?? 'file',
+            'storage.options' => [
+                'path' => __DIR__.'/../data',
             ],
             'docker.client.options' => [
                 'max_duration' => -1,
                 'timeout' => -1,
             ],
-            'upstream.table.options' => [
+            'service.table.options' => [
                 'table_row_size' => 1024,
                 'upstream_size' => 512000,
             ],
-            'registry' => $_ENV['registry'] ?? 'nginx',
-            'nginx.config' => [
+            'nginx.options' => [
                 'nginx_conf_path' => $_ENV['NGINX_CONF_PATH'] ?? '/app/data/nginx/nginx.conf',
                 'nginx_vhost_dir' => $_ENV['NGINX_VHOST_DIR'] ?? '/app/data/nginx/sites-enabled',
                 'nginx_vhost_ssl_key_path' => $_ENV['NGINX_VHOST_SSL_KEY_PATH'] ?? '/app/data/nginx/ssl/%s/private-key.pem',
@@ -61,13 +61,17 @@ final class ContainerDefinition
             ],
             // @phpstan-ignore-next-line
             RegistryInterface::class => static fn (ContainerInterface $c) => match (true) {
-                'nginx' === $c->get('registry') => $c->get(Nginx::class)
+                'nginx' === $c->get('registry') => $c->get(Registry::class)
             },
-            StorageInterface::class => static function (ContainerInterface $c) {
-                [$storageClass, $args] = $c->get('storage');
-
-                return new $storageClass(...$args);
+            // @phpstan-ignore-next-line
+            StorageInterface::class => static fn (ContainerInterface $c) => match (true) {
+                'file' === $c->get('storage') => $c->get(FileStorage::class)
             },
+            // @phpstan-ignore-next-line
+            LockInterface::class => static fn (ContainerInterface $c) => match (true) {
+                'file' === $c->get('storage') => $c->get(SwooleMutex::class)
+            },
+            RegistryManagerInterface::class => static fn (ContainerInterface $c) => $c->get(RegistryManager::class),
             LoggerInterface::class => static function () {
                 $output = new ConsoleOutput();
                 match ((int) getenv('SHELL_VERBOSITY')) {
@@ -81,17 +85,16 @@ final class ContainerDefinition
 
                 return new ConsoleLogger($output);
             },
-            Lock::class => static fn (ContainerInterface $c) => new Lock(),
             Client::class => static fn (ContainerInterface $c) => Client::withHttpClient(options: $c->get('docker.client.options')),
             Environment::class => static function (ContainerInterface $c) {
                 $loader = new FilesystemLoader(__DIR__.'/../templates');
 
                 return new Environment($loader);
             },
-            UpstreamTable::class => static function (ContainerInterface $c) {
-                $config = $c->get('upstream.table.options');
+            ServiceTable::class => static function (ContainerInterface $c) {
+                $config = $c->get('service.table.options');
 
-                return UpstreamTable::createTable(
+                return ServiceTable::createTable(
                     $c->get(StorageInterface::class),
                     $config['table_row_size'],
                     $config['upstream_size']

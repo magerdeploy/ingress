@@ -4,26 +4,34 @@ declare(strict_types=1);
 
 namespace PRSW\SwarmIngress\Store;
 
+use DI\Attribute\Inject;
 use PRSW\SwarmIngress\Lock\LockFactory;
-use PRSW\SwarmIngress\Lock\SwooleMutex;
 
 final readonly class FileStorage implements StorageInterface
 {
-    public function __construct(private string $path, private LockFactory $lockFactory) {}
+    /**
+     * @param array<string,string> $options
+     */
+    public function __construct(
+        private LockFactory $lockFactory,
+        #[Inject('storage.options')]
+        private array $options,
+    ) {}
 
     public function load(string $prefix): array
     {
-        $dir = dirname($this->path);
-        if (file_exists($dir)) {
-            mkdir($dir, 755, true);
+        $fileName = $this->options['path'].'/'.$prefix;
+        $dir = dirname($fileName);
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
         }
 
-        $data = file_get_contents($this->path.'/'.$prefix);
+        $data = file_get_contents($fileName);
         if ('' === $data || '0' === $data || false === $data) {
             return [];
         }
 
-        return unserialize($data);
+        return json_decode($data, true);
     }
 
     public function set(string $prefix, string $key, array $value): bool
@@ -31,7 +39,7 @@ final readonly class FileStorage implements StorageInterface
         $data = $this->load($prefix);
         $data[$key] = $value;
 
-        return $this->writeToFile($prefix, serialize($data));
+        return $this->writeToFile($prefix, json_encode($data));
     }
 
     public function del(string $prefix, string $key): bool
@@ -39,7 +47,7 @@ final readonly class FileStorage implements StorageInterface
         $data = $this->load($prefix);
         unset($data[$key]);
 
-        return $this->writeToFile($prefix, serialize($data));
+        return $this->writeToFile($prefix, json_encode($data));
     }
 
     public function get(string $prefix, string $key): array
@@ -49,17 +57,12 @@ final readonly class FileStorage implements StorageInterface
         return $data[$key];
     }
 
-    public function getLockClass(): string
-    {
-        return SwooleMutex::class;
-    }
-
     private function writeToFile(string $prefix, string $data): bool
     {
         $lock = $this->lockFactory->create('file');
         $lock->lock();
         defer(static fn () => $lock->release());
 
-        return (bool) file_put_contents($this->path.'/'.$prefix, serialize($data));
+        return (bool) file_put_contents($this->options['path'].'/'.$prefix, $data);
     }
 }

@@ -1,23 +1,23 @@
 <?php
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Tests\Registry;
+namespace PRSW\SwarmIngress\Tests\Registry\Nginx;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use PRSW\SwarmIngress\Registry\Nginx;
+use PRSW\SwarmIngress\Registry\Nginx\Registry;
 use PRSW\SwarmIngress\TableCache\SSLCertificateTable;
-use PRSW\SwarmIngress\TableCache\UpstreamTable;
+use PRSW\SwarmIngress\TableCache\ServiceTable;
 use Psr\Log\LoggerInterface;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
-final class NginxTest extends TestCase
+final class RegistryTest extends TestCase
 {
     private Environment $twig;
     private LoggerInterface|MockObject $logger;
-    private UpstreamTable|MockObject $upstreamTable;
+    private ServiceTable|MockObject $serviceTable;
     private SSLCertificateTable|MockObject $SSLCertificateTable;
-    private Nginx $nginx;
+    private Registry $nginx;
     private string $nginxConfigPath;
 
     public function setUp(): void
@@ -27,7 +27,7 @@ final class NginxTest extends TestCase
         $this->twig = new Environment($loader);
         $this->logger = $this->createMock(LoggerInterface::class);
         // @phpstan-ignore-next-line
-        $this->upstreamTable = $this->createMock(UpstreamTable::class);
+        $this->serviceTable = $this->createMock(ServiceTable::class);
         // @phpstan-ignore-next-line
         $this->SSLCertificateTable = $this->createMock(SSLCertificateTable::class);
         $this->nginxConfigPath = tempnam(sys_get_temp_dir(), 'nginx.conf');
@@ -36,7 +36,7 @@ final class NginxTest extends TestCase
     public function testInitSuccess(): void
     {
         $nginxConfig = ['nginx_conf_path' => $this->nginxConfigPath, 'options' => []];
-        $this->nginx = new Nginx($this->logger, $this->twig, $this->upstreamTable, $this->SSLCertificateTable, $nginxConfig);
+        $this->nginx = new Registry($this->logger, $this->twig, $this->serviceTable, $this->SSLCertificateTable, $nginxConfig);
 
         $this->logger->expects($this->never())->method('error');
 
