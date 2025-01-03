@@ -1,0 +1,9 @@
+services:
+    ingress-controller:
+        build:
+            dockerfile: ./docker/nginx-bookworm/Dockerfile
+            context: .
+            target: base
+        volumes:
+            - .:/app
+            - /var/run/docker.sock:/var/run/docker.sock

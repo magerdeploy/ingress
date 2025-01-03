@@ -1,0 +1,41 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__.'/../vendor/autoload.php';
+
+use DI\ContainerBuilder;
+use PRSW\SwarmIngress\ConsoleApplication;
+use PRSW\SwarmIngress\ContainerDefinition;
+use PRSW\SwarmIngress\Command\Watch;
+use Swoole\Runtime;
+use Swoole\ExitException;
+use Symfony\Component\Dotenv\Dotenv;
+
+error_reporting(~E_WARNING);
+Runtime::setHookFlags(SWOOLE_HOOK_ALL);
+
+$exitCode = 0;
+Co\run(function() use (&$exitCode) {
+    try {
+        $dotenv = new Dotenv();
+        $dotenv->loadEnv(__DIR__ . '/../.env');
+        $containerBuilder = new ContainerBuilder();
+        $containerBuilder->addDefinitions(ContainerDefinition::getDefinition());
+        $containerBuilder->useAttributes(true);
+        $containerBuilder->useAutowiring(true);
+
+        $app = new ConsoleApplication('Swarm Ingress', 'v0.1.0');
+        $app->setAutoExit(false);
+        $app->configureVerbosityLevel();
+
+        $container = $containerBuilder->build();
+
+        $app->add($container->get(Watch::class));
+        $app->run();
+    } catch (ExitException $e) {
+        $exitCode = $e->getStatus();
+    }
+});
+
+exit($exitCode);
+

@@ -1,0 +1,6 @@
+.idea
+.devbox
+data
+vendor
+.php-cs-fixer.cache
+.env.local

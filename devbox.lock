@@ -1,0 +1,102 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "php83@latest": {
+      "last_modified": "2024-11-16T04:25:12Z",
+      "plugin_version": "0.0.3",
+      "resolved": "github:NixOS/nixpkgs/34a626458d686f1b58139620a8b2793e9e123bba#php83",
+      "source": "devbox-search",
+      "version": "8.3.13",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mfhciqlprywca7n71mwfxwczk10jdxa0-php-with-extensions-8.3.13",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mfhciqlprywca7n71mwfxwczk10jdxa0-php-with-extensions-8.3.13"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/sd2d5fizi6kvfg49gk7ik3f5f88731z2-php-with-extensions-8.3.13",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/sd2d5fizi6kvfg49gk7ik3f5f88731z2-php-with-extensions-8.3.13"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/svll1a64506chpjlsgj50hx8gw5j3b8b-php-with-extensions-8.3.13",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/svll1a64506chpjlsgj50hx8gw5j3b8b-php-with-extensions-8.3.13"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/r3lgaz85f2p8bvkx7z3d2qi1z4b1dn7k-php-with-extensions-8.3.13",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/r3lgaz85f2p8bvkx7z3d2qi1z4b1dn7k-php-with-extensions-8.3.13"
+        }
+      }
+    },
+    "php83Extensions.swoole@latest": {
+      "last_modified": "2024-12-23T21:10:33Z",
+      "resolved": "github:NixOS/nixpkgs/de1864217bfa9b5845f465e771e0ecb48b30e02d#php83Extensions.swoole",
+      "source": "devbox-search",
+      "version": "6.0.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mnwga4jz4vjh5yk9y48lxlbq2s04cpgd-php-swoole-6.0.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mnwga4jz4vjh5yk9y48lxlbq2s04cpgd-php-swoole-6.0.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xwf7sa9n8pnpiscrq6f0y36m0cn9m33z-php-swoole-6.0.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xwf7sa9n8pnpiscrq6f0y36m0cn9m33z-php-swoole-6.0.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/psk1ws0qvl5bgjd37karl9g0qdm1vx6r-php-swoole-6.0.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/psk1ws0qvl5bgjd37karl9g0qdm1vx6r-php-swoole-6.0.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ssrsj3x5s4arxxki5k8v17cfz6bjmy41-php-swoole-6.0.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ssrsj3x5s4arxxki5k8v17cfz6bjmy41-php-swoole-6.0.0"
+        }
+      }
+    }
+  }
+}
