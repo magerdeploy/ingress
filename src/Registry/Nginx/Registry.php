@@ -11,7 +11,7 @@ use PRSW\SwarmIngress\Registry\Initializer;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\Reloadable;
 use PRSW\SwarmIngress\TableCache\ServiceTable;
-use PRSW\SwarmIngress\TableCache\SSLCertificateTable;
+use PRSW\SwarmIngress\TableCache\SslCertificateTable;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\Process;
 use Twig\Environment;
@@ -25,7 +25,7 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
         private LoggerInterface $logger,
         private Environment $twig,
         private ServiceTable $serviceTable,
-        private SSLCertificateTable $SSLCertificateTable,
+        private SslCertificateTable $SSLCertificateTable,
         #[Inject('nginx.options')]
         private array $options = []
     ) {}
@@ -64,11 +64,11 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
     public function addService(string $domain, string $path, string $upstream): void
     {
-        mkdir($this->options['nginx_vhost_dir'], 0777, true);
+        mkdir($this->options['nginx_vhost_dir'], 0755, true);
 
         $this->serviceTable->addUpstream($domain, $upstream);
 
-        $this->renderVhostConfig($domain, $path);
+        $this->refresh($domain, $path);
 
         $this->logger->info('nginx vhost added {domain}', ['domain' => $domain]);
     }
@@ -115,16 +115,16 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
     public function addUpstream(string $domain, string $path, string $upstream): void
     {
         $this->serviceTable->addUpstream($domain, $upstream);
-        $this->renderVhostConfig($domain, $path);
+        $this->refresh($domain, $path);
     }
 
     public function removeUpstream(string $domain, string $path, string $upstream): void
     {
         $this->serviceTable->removeUpstream($domain, $upstream);
-        $this->renderVhostConfig($domain, $path);
+        $this->refresh($domain, $path);
     }
 
-    private function renderVhostConfig(string $domain, string $path): void
+    public function refresh(string $domain, string $path): void
     {
         $fileName = $this->options['nginx_vhost_dir'].'/'.$domain;
         $upstream = $this->serviceTable->getUpstream($domain);
@@ -149,7 +149,7 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
         $certPath = sprintf($this->options['nginx_vhost_ssl_certificate_path'], $domain);
 
         if ($sslEnabled) {
-            mkdir(dirname($keyPath), 0777, true);
+            mkdir(dirname($keyPath), 0755, true);
             file_put_contents($keyPath, $ssl['private_key']);
             file_put_contents($certPath, $ssl['certificate']);
         }

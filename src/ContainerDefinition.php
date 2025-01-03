@@ -4,10 +4,20 @@ declare(strict_types=1);
 
 namespace PRSW\SwarmIngress;
 
+use AcmePhp\Core\AcmeClient;
+use AcmePhp\Core\AcmeClientInterface;
+use AcmePhp\Core\Http\Base64SafeEncoder;
+use AcmePhp\Core\Http\SecureHttpClientFactory;
+use AcmePhp\Core\Http\ServerErrorHandler;
+use AcmePhp\Core\Protocol\ExternalAccount;
 use AcmePhp\Ssl\Generator\KeyPairGenerator;
 use AcmePhp\Ssl\KeyPair;
+use AcmePhp\Ssl\Parser\KeyParser;
 use AcmePhp\Ssl\PrivateKey;
 use AcmePhp\Ssl\PublicKey;
+use AcmePhp\Ssl\Signer\DataSigner;
+use GuzzleHttp\Client as GuzzleHttpClient;
+use GuzzleHttp\ClientInterface;
 use PRSW\Docker\Client;
 use PRSW\SwarmIngress\Lock\LockInterface;
 use PRSW\SwarmIngress\Lock\SwooleMutex;
@@ -19,7 +29,7 @@ use PRSW\SwarmIngress\Store\FileStorage;
 use PRSW\SwarmIngress\Store\StorageInterface;
 use PRSW\SwarmIngress\TableCache\ConfigTable;
 use PRSW\SwarmIngress\TableCache\ServiceTable;
-use PRSW\SwarmIngress\TableCache\SSLCertificateTable;
+use PRSW\SwarmIngress\TableCache\SslCertificateTable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Logger\ConsoleLogger;
@@ -59,6 +69,19 @@ final class ContainerDefinition
                     'worker_connections' => $_ENV['NGINX_CLIENT_MAX_CONNECTIONS'] ?? 65535,
                 ],
             ],
+            'self_signed.options' => [
+                'ca' => $_ENV['SELF_SIGNED_CA'],
+            ],
+            'acme.options' => [
+                'email' => $_ENV['ACME_EMAIL'] ?? 'admin@localhost',
+                'directory_url' => $_ENV['ACME_DIRECTORY_URL'] ?? 'https://acme-v02.api.letsencrypt.org/directory',
+                'external_account' => [
+                    'id' => $_ENV['ACME_EXTERNAL_ACCOUNT_ID'],
+                    'key' => $_ENV['ACME_EXTERNAL_ACCOUNT_KEY'],
+                ],
+                'max_sanity_check_tries' => $_ENV['ACME_MAX_SANITY_CHECK_MAX_TRIES'] ?? 5,
+                'sanity_check_interval' => $_ENV['ACME_SANITY_CHECK_INTERVAL'] ?? 60,
+            ],
             // @phpstan-ignore-next-line
             RegistryInterface::class => static fn (ContainerInterface $c) => match (true) {
                 'nginx' === $c->get('registry') => $c->get(Registry::class)
@@ -70,6 +93,27 @@ final class ContainerDefinition
             // @phpstan-ignore-next-line
             LockInterface::class => static fn (ContainerInterface $c) => match (true) {
                 'file' === $c->get('storage') => $c->get(SwooleMutex::class)
+            },
+            ClientInterface::class => static fn (ContainerInterface $c) => new GuzzleHttpClient(),
+            AcmeClientInterface::class => static function (ContainerInterface $c) {
+                $options = $c->get('acme.options');
+                $factory = new SecureHttpClientFactory(
+                    $c->get(ClientInterface::class),
+                    new Base64SafeEncoder(),
+                    new KeyParser(),
+                    new DataSigner(),
+                    new ServerErrorHandler()
+                );
+                $httpClient = $factory->createSecureHttpClient($c->get(KeyPair::class));
+                $acme = new AcmeClient($httpClient, $options['directory_url']);
+                $externalAccount = null;
+                if (null !== $options['external_account']['id'] && null !== $options['external_account']['key']) {
+                    $externalAccount = new ExternalAccount($options['external_account']['id'], $options['external_account']['key']);
+                }
+
+                $acme->registerAccount($options['email'], $externalAccount);
+
+                return $acme;
             },
             RegistryManagerInterface::class => static fn (ContainerInterface $c) => $c->get(RegistryManager::class),
             LoggerInterface::class => static function () {
@@ -100,7 +144,7 @@ final class ContainerDefinition
                     $config['upstream_size']
                 );
             },
-            SSLCertificateTable::class => static fn (ContainerInterface $c) => SSLCertificateTable::createTable(
+            SslCertificateTable::class => static fn (ContainerInterface $c) => SslCertificateTable::createTable(
                 $c->get(StorageInterface::class)
             ),
             ConfigTable::class => static fn (ContainerInterface $c) => ConfigTable::createTable(

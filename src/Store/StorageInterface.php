@@ -19,7 +19,7 @@ interface StorageInterface
     public function get(string $prefix, string $key): array;
 
     /**
-     * @return array<string, array<string, string>>
+     * @return array<string, array<string, mixed>>
      */
     public function load(string $prefix): array;
 }

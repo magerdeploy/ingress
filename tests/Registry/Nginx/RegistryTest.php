@@ -5,7 +5,7 @@ namespace PRSW\SwarmIngress\Tests\Registry\Nginx;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use PRSW\SwarmIngress\Registry\Nginx\Registry;
-use PRSW\SwarmIngress\TableCache\SSLCertificateTable;
+use PRSW\SwarmIngress\TableCache\SslCertificateTable;
 use PRSW\SwarmIngress\TableCache\ServiceTable;
 use Psr\Log\LoggerInterface;
 use Twig\Environment;
@@ -16,7 +16,7 @@ final class RegistryTest extends TestCase
     private Environment $twig;
     private LoggerInterface|MockObject $logger;
     private ServiceTable|MockObject $serviceTable;
-    private SSLCertificateTable|MockObject $SSLCertificateTable;
+    private SslCertificateTable|MockObject $SSLCertificateTable;
     private Registry $nginx;
     private string $nginxConfigPath;
 
@@ -29,7 +29,7 @@ final class RegistryTest extends TestCase
         // @phpstan-ignore-next-line
         $this->serviceTable = $this->createMock(ServiceTable::class);
         // @phpstan-ignore-next-line
-        $this->SSLCertificateTable = $this->createMock(SSLCertificateTable::class);
+        $this->SSLCertificateTable = $this->createMock(SslCertificateTable::class);
         $this->nginxConfigPath = tempnam(sys_get_temp_dir(), 'nginx.conf');
     }
 

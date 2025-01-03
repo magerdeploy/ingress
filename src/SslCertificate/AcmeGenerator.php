@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Acme;
+namespace PRSW\SwarmIngress\SslCertificate;
 
 use AcmePhp\Core\AcmeClientInterface;
 use AcmePhp\Core\Challenge\Http\HttpValidator;
@@ -14,23 +14,31 @@ use AcmePhp\Ssl\CertificateResponse;
 use AcmePhp\Ssl\DistinguishedName;
 use AcmePhp\Ssl\KeyPair;
 use AcmePhp\Ssl\Parser\CertificateParser;
+use DI\Attribute\Inject;
+use GuzzleHttp\ClientInterface;
 use PRSW\SwarmIngress\Lock\LockFactory;
 use PRSW\SwarmIngress\Registry\AcmeHttpChallenge;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\Reloadable;
-use PRSW\SwarmIngress\TableCache\SSLCertificateTable;
+use PRSW\SwarmIngress\TableCache\SslCertificateTable;
 use Psr\Log\LoggerInterface;
 
-final readonly class LetsEncrypt implements AcmeInterface
+final readonly class AcmeGenerator implements CertificateGeneratorInterface
 {
+    /**
+     * @param array<string,array<string,int|string>|int|string> $options
+     */
     public function __construct(
         private RegistryInterface $registry,
-        private SSLCertificateTable $SSLCertificateTable,
+        private SslCertificateTable $SSLCertificateTable,
         private LockFactory $lockFactory,
         private AcmeClientInterface $acmeClient,
         private LoggerInterface $logger,
         private KeyPair $keyPair,
         private CertificateParser $certificateParser,
+        private ClientInterface $httpClient,
+        #[Inject('acme.options')]
+        private array $options
     ) {}
 
     public function createNewCertificate(string $domain): void
@@ -40,6 +48,8 @@ final readonly class LetsEncrypt implements AcmeInterface
 
             return;
         }
+
+        $this->sanityCheck($domain);
 
         $lock = $this->lockFactory->create($domain);
         $success = $lock->lock(60 * 10);
@@ -175,6 +185,41 @@ final readonly class LetsEncrypt implements AcmeInterface
             $this->registry->cleanup($domain);
             if ($this->registry instanceof Reloadable) {
                 $this->registry->reload();
+            }
+        }
+    }
+
+    private function sanityCheck(string $domain): void
+    {
+        $this->serveHttpChallenge($domain, 'dummy', 'dummy');
+
+        $try = 0;
+        while (true) {
+            if ($try > (int) $this->options['max_sanity_check_tries']) {
+                $this->cleanup($domain);
+
+                throw new \Exception(
+                    sprintf('failed to get sanity check for acme challenge after trying 5 times %s', $domain)
+                );
+            }
+
+            try {
+                $response = $this->httpClient->request(
+                    'GET',
+                    "http://{$domain}/.well-known/acme-challenge/dummy",
+                    [
+                        'timeout' => 5,
+                    ]
+                );
+                if (200 === $response->getStatusCode()) {
+                    break;
+                }
+                $this->logger->warning('failed to get sanity check for acme challenge {domain} {status}', ['domain' => $domain, 'status' => $response->getStatusCode()]);
+            } catch (\Exception $e) {
+                $this->logger->warning('failed to get sanity check for acme challenge {domain} {msg}', ['domain' => $domain, 'msg' => $e->getMessage()]);
+            } finally {
+                sleep($this->options['sanity_check_interval']);
+                ++$try;
             }
         }
     }

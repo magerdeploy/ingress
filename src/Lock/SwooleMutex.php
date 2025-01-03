@@ -29,8 +29,9 @@ final class SwooleMutex implements LockInterface
 
     public function createLock(): LockInterface
     {
-        $this->lock = new Lock();
+        $new = clone $this;
+        $new->lock = new Lock();
 
-        return $this;
+        return $new;
     }
 }

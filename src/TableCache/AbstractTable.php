@@ -12,13 +12,13 @@ abstract class AbstractTable extends Table
     protected StorageInterface $storage;
 
     /**
-     * @param array<string, float|int|string> $value
+     * @param array<string, mixed> $value
      */
     public function set(string $key, array $value, bool $writeToStorage = true): bool
     {
         $encodedValue = [];
         foreach ($value as $k => $v) {
-            if (is_array(is_array($v))) {
+            if (is_array($v)) {
                 $encodedValue[$k] = json_encode($v);
             }
         }

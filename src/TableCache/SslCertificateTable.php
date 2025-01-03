@@ -7,7 +7,7 @@ namespace PRSW\SwarmIngress\TableCache;
 use PRSW\SwarmIngress\Store\StorageInterface;
 use Swoole\Table;
 
-final class SSLCertificateTable extends AbstractTable
+final class SslCertificateTable extends AbstractTable
 {
     public StorageInterface $storage;
 
@@ -15,23 +15,25 @@ final class SSLCertificateTable extends AbstractTable
         string $domain,
         string $privateKey,
         string $certificate,
-        \DateTimeInterface $expiredAt
+        \DateTimeInterface $expiredAt,
+        bool $auto = true,
     ): void {
         $this->set($domain, [
             'private_key' => $privateKey,
             'certificate' => $certificate,
             'expired_at' => $expiredAt->format(\DateTimeInterface::ISO8601_EXPANDED),
+            'auto' => (int) $auto,
         ]);
     }
 
     /**
-     * @return array<int, string>
+     * @return array<string, bool>
      */
     public function listDomains(): array
     {
         $domains = [];
         foreach ($this as $key => $value) {
-            $domains[] = $key;
+            $domains[$key] = (bool) ($value['auto'] ?? 0);
         }
 
         return $domains;
@@ -48,6 +50,7 @@ final class SSLCertificateTable extends AbstractTable
         $obj->column('private_key', Table::TYPE_STRING, 512000);
         $obj->column('certificate', Table::TYPE_STRING, 512000);
         $obj->column('expired_at', Table::TYPE_STRING, 128);
+        $obj->column('auto', Table::TYPE_INT, 1);
         $obj->storage = $storage;
         $obj->create();
 

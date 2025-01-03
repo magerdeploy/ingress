@@ -5,6 +5,7 @@
     "require": {
         "php": "^8.3",
         "ext-swoole": "*",
+        "ext-openssl": "*",
         "symfony/console": "^7.2",
         "prsw/docker-php": "^0.1.0",
         "swoole/ide-helper": "^5.1",

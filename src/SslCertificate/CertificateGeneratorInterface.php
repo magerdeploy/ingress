@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Acme;
+namespace PRSW\SwarmIngress\SslCertificate;
 
-interface AcmeInterface
+interface CertificateGeneratorInterface
 {
     public function createNewCertificate(string $domain): void;
 
