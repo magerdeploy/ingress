@@ -38,7 +38,7 @@ abstract class AbstractTable
         }
 
         $data = $this->data[$key];
-        if (null === $field) {
+        if (null !== $field) {
             return $data[$field];
         }
 

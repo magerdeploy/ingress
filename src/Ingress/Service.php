@@ -7,7 +7,7 @@ namespace PRSW\SwarmIngress\Ingress;
 use PRSW\Docker\Generated\Model\ContainersIdJsonGetResponse200 as DockerContainer;
 use PRSW\Docker\Generated\Model\Service as DockerService;
 
-final class Service implements \Stringable
+final class Service
 {
     public const string TYPE_CONTAINER = 'container';
     public const string TYPE_SERVICE = 'service';
@@ -16,6 +16,7 @@ final class Service implements \Stringable
     public const string AUTO_TLS_SELF_SIGNED = 'self-signed';
     public const string AUTO_TLS_ACME = 'acme';
 
+    public string $id;
     public string $name;
     public string $domain;
     public string $path;
@@ -23,18 +24,6 @@ final class Service implements \Stringable
     public string $type;
     public string $upstream;
     public ?string $autoTls = null;
-
-    public function __toString(): string
-    {
-        return sprintf(
-            '%s - %s - %s - %s - %s',
-            $this->type,
-            $this->name,
-            $this->upstream,
-            $this->domain,
-            $this->path
-        );
-    }
 
     public static function fromDockerService(DockerService $service): self
     {
@@ -50,6 +39,7 @@ final class Service implements \Stringable
             );
         }
 
+        $obj->id = $service->getId();
         $obj->name = $service->getSpec()->getName();
         $obj->type = self::TYPE_SERVICE;
 
@@ -69,6 +59,7 @@ final class Service implements \Stringable
         }
 
         $obj->type = self::TYPE_CONTAINER;
+        $obj->id = $container->getId();
 
         if ($labels->offsetExists('com.docker.compose.project')) {
             $obj->name = $labels['com.docker.compose.project'].'-'.$labels['com.docker.compose.service'];
@@ -78,6 +69,24 @@ final class Service implements \Stringable
         }
 
         return self::setCommonData($labels, $obj);
+    }
+
+    public static function fromServiceId(string $id): self
+    {
+        $obj = new self();
+        $obj->id = $id;
+        $obj->type = self::TYPE_SERVICE;
+
+        return $obj;
+    }
+
+    public function getIdentifier(): string
+    {
+        if (self::TYPE_CONTAINER === $this->type) {
+            return $this->domain;
+        }
+
+        return $this->id;
     }
 
     /**

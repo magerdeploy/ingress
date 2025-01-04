@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace PRSW\SwarmIngress\Registry;
 
+use PRSW\SwarmIngress\Ingress\Service;
+
 interface CanToManageUpstream
 {
-    public function addUpstream(string $domain, string $path, string $upstream): void;
+    public function addUpstream(Service $service): void;
 
-    public function removeUpstream(string $domain, string $path, string $upstream): void;
+    public function removeUpstream(Service $service): void;
 }

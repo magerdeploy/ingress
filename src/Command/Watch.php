@@ -10,11 +10,12 @@ use PRSW\Docker\Model\Stream;
 use PRSW\SwarmIngress\Ingress\ServiceBuilder;
 use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
 use Psr\Log\LoggerInterface;
-use Revolt\EventLoop;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+
+use function Amp\async;
 
 final class Watch extends Command
 {
@@ -41,21 +42,17 @@ final class Watch extends Command
             ],
         ]);
 
-        $this->logger->info('Docker Watcher Started');
-
         $eventStream = $this->docker->systemEvents(['filters' => $filters], Client::FETCH_STREAM);
 
         $this->registryManager->init();
 
-        EventLoop::repeat(5, function() use ($io) {
-            $io->writeln((string) memory_get_usage(true));
-        });
+        $this->logger->info('docker watcher started');
 
         if ($eventStream instanceof Stream) {
             /** @var EventMessage $event */
             foreach ($eventStream->stream() as $event) {
                 try {
-                    $service = $this->serviceBuilder->build($event);
+                    $service = async(fn() => $this->serviceBuilder->build($event))->await();
 
                     $eventName = sprintf(
                         'on%s%s',
@@ -63,11 +60,14 @@ final class Watch extends Command
                         ucfirst($event->getAction())
                     );
 
+                    $this->logger->info('event handled', ['event' => $eventName, 'service' => $service]);
+
                     if (!method_exists($this->registryManager, $eventName)) {
                         throw new \InvalidArgumentException('invalid docker event');
                     }
 
-                    $this->registryManager->{$eventName}($service);
+                    async(fn() => $this->registryManager->{$eventName}($service));
+
                 } catch (\Exception $e) {
                     $this->logger->warning($e->getMessage());
                 }

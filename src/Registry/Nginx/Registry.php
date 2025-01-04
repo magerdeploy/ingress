@@ -8,6 +8,7 @@ use Amp\Process\Process;
 use DI\Attribute\Inject;
 use PRSW\SwarmIngress\Cache\ServiceTable;
 use PRSW\SwarmIngress\Cache\SslCertificateTable;
+use PRSW\SwarmIngress\Ingress\Service;
 use PRSW\SwarmIngress\Registry\AcmeHttpChallenge;
 use PRSW\SwarmIngress\Registry\CanToManageUpstream;
 use PRSW\SwarmIngress\Registry\Initializer;
@@ -61,22 +62,22 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
         $this->logger->info('nginx configuration reloaded');
     }
 
-    public function addService(string $domain, string $path, string $upstream): void
+    public function addService(Service $service): void
     {
         if (!exists($this->options['nginx_vhost_dir'])) {
             createDirectoryRecursively($this->options['nginx_vhost_dir'], 0755);
         }
 
-        $this->serviceTable->addUpstream($domain, $upstream);
+        $this->serviceTable->addUpstream($service->getIdentifier(), $service->upstream);
 
-        $this->refresh($domain, $path);
+        $this->refresh($service);
 
-        $this->logger->info('nginx vhost added {domain}', ['domain' => $domain]);
+        $this->logger->info('nginx vhost added', ['service' => $service]);
     }
 
-    public function removeService(string $domain, string $path, string $upstream): void
+    public function removeService(Service $service): void
     {
-        $fileName = $this->options['nginx_vhost_dir'].'/'.$domain;
+        $fileName = $this->options['nginx_vhost_dir'].'/'.$service->getIdentifier();
         if (!exists($fileName)) {
             $this->logger->error('nginx virtual host config not found');
 
@@ -85,8 +86,8 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
         deleteFile($fileName);
 
-        $this->serviceTable->del($domain);
-        $this->logger->info('nginx vhost deleted {domain}', ['domain' => $domain]);
+        $this->serviceTable->del($service->getIdentifier());
+        $this->logger->info('nginx vhost deleted', ['service' => $service]);
     }
 
     public function serveHttpChallenge(string $domain, string $token, string $payload): void
@@ -108,28 +109,28 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
         deleteFile($fileName);
     }
 
-    public function addUpstream(string $domain, string $path, string $upstream): void
+    public function addUpstream(Service $service): void
     {
-        $this->serviceTable->addUpstream($domain, $upstream);
-        $this->refresh($domain, $path);
+        $this->serviceTable->addUpstream($service->getIdentifier(), $service->upstream);
+        $this->refresh($service);
     }
 
-    public function removeUpstream(string $domain, string $path, string $upstream): void
+    public function removeUpstream(Service $service): void
     {
-        $this->serviceTable->removeUpstream($domain, $upstream);
-        $this->refresh($domain, $path);
+        $this->serviceTable->removeUpstream($service->getIdentifier(), $service->upstream);
+        $this->refresh($service);
     }
 
-    public function refresh(string $domain, string $path): void
+    public function refresh(Service $service): void
     {
-        $fileName = $this->options['nginx_vhost_dir'].'/'.$domain;
-        $upstream = $this->serviceTable->getUpstream($domain);
+        $fileName = $this->options['nginx_vhost_dir'].'/'.$service->getIdentifier();
+        $upstream = $this->serviceTable->getUpstream($service->getIdentifier());
 
         $vhost = $this->twig->render('nginx/site-conf.html.twig', [
             'upstream' => $upstream,
-            'path' => $path,
-            'domain' => $domain,
-        ] + $this->dumpCertificate($domain));
+            'path' => $service->path,
+            'domain' => $service->domain,
+        ] + $this->dumpCertificate($service->domain));
 
         write($fileName, $vhost);
     }

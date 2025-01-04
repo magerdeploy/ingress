@@ -20,11 +20,12 @@ final readonly class ServiceBuilder
         }
 
         if ('service' === $event->getType()) {
-            $service = $this->docker->serviceInspect($event->getActor()->getID());
-
-            return Service::fromDockerService($service);
+            return match(true) {
+                'remove' === $event->getAction() => Service::fromServiceId($event->getActor()->getID()),
+                default => Service::fromDockerService($this->docker->serviceInspect($event->getActor()->getID()))
+            };
         }
 
-        throw new \InvalidArgumentException('Unknown event type');
+        throw new \InvalidArgumentException('unknown event type');
     }
 }

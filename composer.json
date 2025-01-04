@@ -17,7 +17,8 @@
         "amphp/process": "^2.0",
         "amphp/parallel": "^2.3",
         "amphp/sync": "^2.3",
-        "amphp/http-client-guzzle-adapter": "^1.1"
+        "amphp/http-client-guzzle-adapter": "^1.1",
+        "amphp/log": "^2.0"
     },
     "license": "MIT",
     "autoload": {

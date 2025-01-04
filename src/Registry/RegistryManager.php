@@ -20,14 +20,14 @@ final readonly class RegistryManager implements RegistryManagerInterface
             return;
         }
 
-        if ($this->serviceTable->exist($service->domain) && $this->registry instanceof CanToManageUpstream) {
-            $this->registry->addUpstream($service->domain, $service->path, $service->upstream);
+        if ($this->serviceTable->exist($service->getIdentifier()) && $this->registry instanceof CanToManageUpstream) {
+            $this->registry->addUpstream($service);
             $this->reload();
 
             return;
         }
 
-        $this->registry->addService($service->domain, $service->path, $service->upstream);
+        $this->registry->addService($service);
         $this->reload();
     }
 
@@ -37,28 +37,28 @@ final readonly class RegistryManager implements RegistryManagerInterface
             return;
         }
         if ($this->registry instanceof CanToManageUpstream) {
-            $this->registry->removeUpstream($service->domain, $service->path, $service->upstream);
-            if (0 === count($this->serviceTable->getUpstream($service->domain))) {
-                $this->registry->removeService($service->domain, $service->path, $service->upstream);
+            $this->registry->removeUpstream($service);
+            if (0 === count($this->serviceTable->getUpstream($service->getIdentifier()))) {
+                $this->registry->removeService($service);
             }
             $this->reload();
 
             return;
         }
 
-        $this->registry->removeService($service->domain, $service->path, $service->upstream);
+        $this->registry->removeService($service);
         $this->reload();
     }
 
     public function onServiceCreate(Service $service): void
     {
-        $this->registry->addService($service->domain, $service->path, $service->upstream);
+        $this->registry->addService($service);
         $this->reload();
     }
 
     public function onServiceRemove(Service $service): void
     {
-        $this->registry->removeService($service->domain, $service->path, $service->upstream);
+        $this->registry->removeService($service);
         $this->reload();
     }
 
