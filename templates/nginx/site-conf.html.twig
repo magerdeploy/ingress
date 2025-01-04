@@ -1,17 +1,17 @@
 upstream upstream-{{ domain }} {
-    {% for k,v in upstream %}
-        server {{ k }};
-    {% endfor %}
+{% for k,v in upstream %}
+    server {{ k }};
+{% endfor %}
 }
 
 server {
-    {% if ssl_enabled == true %}
-        listen                  443 ssl http2;
-        listen                  [::]:443 ssl http2;
-    {% else %}
-        listen                  80;
-        listen                  [::]:80;
-    {% endif %}
+{% if ssl_enabled == true %}
+    listen                  443 ssl http2;
+    listen                  [::]:443 ssl http2;
+{% else %}
+    listen                  80;
+    listen                  [::]:80;
+{% endif %}
 
     server_name             {{ domain }};
 

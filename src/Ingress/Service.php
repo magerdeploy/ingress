@@ -22,7 +22,7 @@ final class Service implements \Stringable
     public string $port;
     public string $type;
     public string $upstream;
-    public string $autoTls;
+    public ?string $autoTls = null;
 
     public function __toString(): string
     {
@@ -88,7 +88,7 @@ final class Service implements \Stringable
         $obj->domain = $labels['ingress.domain'];
         $obj->path = $labels['ingress.path'] ?? '/';
         $obj->port = $labels['ingress.port'] ?? '8000';
-        $obj->autoTls = $labels['ingress.auto_tls'] ?? self::AUTO_TLS_SELF_SIGNED;
+        $obj->autoTls = $labels['ingress.auto_tls'] ?? null;
         $obj->upstream = $obj->name.':'.$obj->port;
 
         return $obj;

@@ -16,20 +16,20 @@ use AcmePhp\Ssl\Parser\KeyParser;
 use AcmePhp\Ssl\PrivateKey;
 use AcmePhp\Ssl\PublicKey;
 use AcmePhp\Ssl\Signer\DataSigner;
+use Amp\Http\Client\GuzzleAdapter\GuzzleHandlerAdapter;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\HandlerStack;
 use PRSW\Docker\Client;
+use PRSW\SwarmIngress\Cache\ConfigTable;
 use PRSW\SwarmIngress\Lock\LockInterface;
-use PRSW\SwarmIngress\Lock\SwooleMutex;
+use PRSW\SwarmIngress\Lock\MutexLock;
 use PRSW\SwarmIngress\Registry\Nginx\Registry;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\RegistryManager;
 use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
 use PRSW\SwarmIngress\Store\FileStorage;
 use PRSW\SwarmIngress\Store\StorageInterface;
-use PRSW\SwarmIngress\TableCache\ConfigTable;
-use PRSW\SwarmIngress\TableCache\ServiceTable;
-use PRSW\SwarmIngress\TableCache\SslCertificateTable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Logger\ConsoleLogger;
@@ -92,9 +92,13 @@ final class ContainerDefinition
             },
             // @phpstan-ignore-next-line
             LockInterface::class => static fn (ContainerInterface $c) => match (true) {
-                'file' === $c->get('storage') => $c->get(SwooleMutex::class)
+                'file' === $c->get('storage') => MutexLock::class
             },
-            ClientInterface::class => static fn (ContainerInterface $c) => new GuzzleHttpClient(),
+            ClientInterface::class => static function (ContainerInterface $c) {
+                return new GuzzleHttpClient([
+                    'handler' => HandlerStack::create(new GuzzleHandlerAdapter()),
+                ]);
+            },
             AcmeClientInterface::class => static function (ContainerInterface $c) {
                 $options = $c->get('acme.options');
                 $factory = new SecureHttpClientFactory(
@@ -135,37 +139,22 @@ final class ContainerDefinition
 
                 return new Environment($loader);
             },
-            ServiceTable::class => static function (ContainerInterface $c) {
-                $config = $c->get('service.table.options');
-
-                return ServiceTable::createTable(
-                    $c->get(StorageInterface::class),
-                    $config['table_row_size'],
-                    $config['upstream_size']
-                );
-            },
-            SslCertificateTable::class => static fn (ContainerInterface $c) => SslCertificateTable::createTable(
-                $c->get(StorageInterface::class)
-            ),
-            ConfigTable::class => static fn (ContainerInterface $c) => ConfigTable::createTable(
-                $c->get(StorageInterface::class)
-            ),
             KeyPair::class => static function (ContainerInterface $c) {
-                /** @var ConfigTable $configTable */
-                $configTable = $c->get(ConfigTable::class);
+                /** @var ConfigTable $config */
+                $config = $c->get(ConfigTable::class);
 
-                if (!$configTable->exist('acme.private_key') || !$configTable->exist('acme.public_key')) {
+                if (!$config->exist('acme.private_key') || !$config->exist('acme.public_key')) {
                     $k = new KeyPairGenerator();
                     $pair = $k->generateKeyPair();
-                    $configTable->set('acme.private_key', ['value' => $pair->getPrivateKey()->getDER()]);
-                    $configTable->set('acme.public_key', ['value' => $pair->getPublicKey()->getDER()]);
+                    $config->set('acme.private_key', $pair->getPrivateKey()->getDER());
+                    $config->set('acme.public_key', $pair->getPublicKey()->getDER());
 
                     return $pair;
                 }
 
                 return new KeyPair(
-                    PublicKey::fromDER($configTable->get('acme.public_key', 'value')),
-                    PrivateKey::fromDER($configTable->get('acme.private_key', 'value'))
+                    PublicKey::fromDER($config->get('acme.private_key')),
+                    PrivateKey::fromDER($config->get('acme.public_key'))
                 );
             },
         ];

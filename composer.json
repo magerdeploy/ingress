@@ -4,16 +4,20 @@
     "type": "project",
     "require": {
         "php": "^8.3",
-        "ext-swoole": "*",
         "ext-openssl": "*",
+        "ext-pcntl": "*",
         "symfony/console": "^7.2",
-        "prsw/docker-php": "^0.1.0",
-        "swoole/ide-helper": "^5.1",
+        "prsw/docker-php": "^0.2.1",
         "symfony/dotenv": "^7.2",
         "twig/twig": "^3.0",
         "php-di/php-di": "^7.0",
         "symfony/process": "^7.2",
-        "acmephp/core": "^2.1"
+        "acmephp/core": "^2.1",
+        "amphp/file": "^3.2",
+        "amphp/process": "^2.0",
+        "amphp/parallel": "^2.3",
+        "amphp/sync": "^2.3",
+        "amphp/http-client-guzzle-adapter": "^1.1"
     },
     "license": "MIT",
     "autoload": {

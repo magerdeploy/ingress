@@ -16,11 +16,10 @@ use AcmePhp\Ssl\KeyPair;
 use AcmePhp\Ssl\Parser\CertificateParser;
 use DI\Attribute\Inject;
 use GuzzleHttp\ClientInterface;
-use PRSW\SwarmIngress\Lock\LockFactory;
+use PRSW\SwarmIngress\Cache\SslCertificateTable;
 use PRSW\SwarmIngress\Registry\AcmeHttpChallenge;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\Reloadable;
-use PRSW\SwarmIngress\TableCache\SslCertificateTable;
 use Psr\Log\LoggerInterface;
 
 final readonly class AcmeGenerator implements CertificateGeneratorInterface
@@ -31,7 +30,6 @@ final readonly class AcmeGenerator implements CertificateGeneratorInterface
     public function __construct(
         private RegistryInterface $registry,
         private SslCertificateTable $SSLCertificateTable,
-        private LockFactory $lockFactory,
         private AcmeClientInterface $acmeClient,
         private LoggerInterface $logger,
         private KeyPair $keyPair,
@@ -50,14 +48,6 @@ final readonly class AcmeGenerator implements CertificateGeneratorInterface
         }
 
         $this->sanityCheck($domain);
-
-        $lock = $this->lockFactory->create($domain);
-        $success = $lock->lock(60 * 10);
-
-        if (!$success) {
-            $this->logger->error('failed to acquire lock when generating acme certificate');
-        }
-        defer(static fn () => $lock->release());
 
         if ($this->SSLCertificateTable->exist($domain)) {
             return;
@@ -128,15 +118,6 @@ final readonly class AcmeGenerator implements CertificateGeneratorInterface
 
             return;
         }
-
-        $lock = $this->lockFactory->create($domain);
-        $success = $lock->lock(60 * 10);
-        if (!$success) {
-            $this->logger->error('failed to acquire lock when generating acme certificate');
-
-            return;
-        }
-        defer(static fn () => $lock->release());
 
         try {
             $response = $this->acmeClient->requestCertificate(

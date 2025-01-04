@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace PRSW\SwarmIngress\Registry\Nginx;
 
+use Amp\Process\Process;
 use DI\Attribute\Inject;
+use PRSW\SwarmIngress\Cache\ServiceTable;
+use PRSW\SwarmIngress\Cache\SslCertificateTable;
 use PRSW\SwarmIngress\Registry\AcmeHttpChallenge;
 use PRSW\SwarmIngress\Registry\CanToManageUpstream;
 use PRSW\SwarmIngress\Registry\Initializer;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\Reloadable;
-use PRSW\SwarmIngress\TableCache\ServiceTable;
-use PRSW\SwarmIngress\TableCache\SslCertificateTable;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Process\Process;
 use Twig\Environment;
+
+use function Amp\File\createDirectoryRecursively;
+use function Amp\File\deleteFile;
+use function Amp\File\exists;
+use function Amp\File\write;
 
 final readonly class Registry implements RegistryInterface, Reloadable, Initializer, AcmeHttpChallenge, CanToManageUpstream
 {
@@ -34,26 +39,20 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
     {
         $nginxConfig = $this->twig->render('nginx/nginx-conf.html.twig', $this->options['options']);
 
-        $success = file_put_contents($this->options['nginx_conf_path'], $nginxConfig);
-        if (false === $success) {
-            $this->logger->error('failed to initialized nginx config');
-        }
+        write($this->options['nginx_conf_path'], $nginxConfig);
     }
 
     public function reload(): void
     {
-        $checkConfig = new Process(['nginx', '-t']);
-        $code = $checkConfig->run();
-        if (0 !== $code) {
+        $checkConfig = Process::start(['nginx', '-t']);
+        if (0 !== $checkConfig->join()) {
             $this->logger->error('invalid nginx configuration, reload aborted');
 
             return;
         }
 
-        $reloadNginx = new Process(['nginx', '-s', 'reload']);
-        $code = $reloadNginx->run();
-
-        if (0 !== $code) {
+        $reloadNginx = Process::start(['nginx', '-s', 'reload']);
+        if (0 !== $reloadNginx->join()) {
             $this->logger->error('nginx reload failed');
 
             return;
@@ -64,7 +63,9 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
     public function addService(string $domain, string $path, string $upstream): void
     {
-        mkdir($this->options['nginx_vhost_dir'], 0755, true);
+        if (!exists($this->options['nginx_vhost_dir'])) {
+            createDirectoryRecursively($this->options['nginx_vhost_dir'], 0755);
+        }
 
         $this->serviceTable->addUpstream($domain, $upstream);
 
@@ -76,18 +77,13 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
     public function removeService(string $domain, string $path, string $upstream): void
     {
         $fileName = $this->options['nginx_vhost_dir'].'/'.$domain;
-        if (!file_exists($fileName)) {
+        if (!exists($fileName)) {
             $this->logger->error('nginx virtual host config not found');
 
             return;
         }
 
-        $success = unlink($fileName);
-        if (!$success) {
-            $this->logger->error('failed to remove nginx vhost config');
-
-            return;
-        }
+        deleteFile($fileName);
 
         $this->serviceTable->del($domain);
         $this->logger->info('nginx vhost deleted {domain}', ['domain' => $domain]);
@@ -102,14 +98,14 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
             'payload' => $payload,
         ]);
 
-        file_put_contents($fileName, $acme);
+        write($fileName, $acme);
     }
 
     public function cleanup(string $domain): void
     {
         $fileName = $this->options['nginx_vhost_dir'].'/acme_'.$domain;
 
-        unlink($fileName);
+        deleteFile($fileName);
     }
 
     public function addUpstream(string $domain, string $path, string $upstream): void
@@ -135,7 +131,7 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
             'domain' => $domain,
         ] + $this->dumpCertificate($domain));
 
-        file_put_contents($fileName, $vhost);
+        write($fileName, $vhost);
     }
 
     /**
@@ -144,14 +140,17 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
     private function dumpCertificate(string $domain): array
     {
         $ssl = $this->SSLCertificateTable->get($domain);
-        $sslEnabled = false !== $ssl;
+        $sslEnabled = null !== $ssl;
         $keyPath = sprintf($this->options['nginx_vhost_ssl_key_path'], $domain);
         $certPath = sprintf($this->options['nginx_vhost_ssl_certificate_path'], $domain);
 
         if ($sslEnabled) {
-            mkdir(dirname($keyPath), 0755, true);
-            file_put_contents($keyPath, $ssl['private_key']);
-            file_put_contents($certPath, $ssl['certificate']);
+            if (!exists(dirname($keyPath))) {
+                createDirectoryRecursively(dirname($keyPath), 0755);
+            }
+
+            write($keyPath, $ssl['private_key']);
+            write($certPath, $ssl['certificate']);
         }
 
         return [

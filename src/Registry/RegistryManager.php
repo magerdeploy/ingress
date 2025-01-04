@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PRSW\SwarmIngress\Registry;
 
+use PRSW\SwarmIngress\Cache\ServiceTable;
 use PRSW\SwarmIngress\Ingress\Service;
-use PRSW\SwarmIngress\TableCache\ServiceTable;
 
 final readonly class RegistryManager implements RegistryManagerInterface
 {

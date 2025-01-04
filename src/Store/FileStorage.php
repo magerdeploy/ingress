@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace PRSW\SwarmIngress\Store;
 
 use DI\Attribute\Inject;
-use PRSW\SwarmIngress\Lock\LockFactory;
+use Psr\Log\LoggerInterface;
+
+use function Amp\File\createDirectoryRecursively;
+use function Amp\File\exists;
+use function Amp\File\read;
+use function Amp\File\write;
 
 final readonly class FileStorage implements StorageInterface
 {
@@ -13,28 +18,35 @@ final readonly class FileStorage implements StorageInterface
      * @param array<string,string> $options
      */
     public function __construct(
-        private LockFactory $lockFactory,
+        private LoggerInterface $logger,
         #[Inject('storage.options')]
         private array $options,
     ) {}
 
+    /**
+     * @return array<int|string, mixed>
+     */
     public function load(string $prefix): array
     {
         $fileName = $this->options['path'].'/'.$prefix;
         $dir = dirname($fileName);
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
+        if (!exists($dir)) {
+            createDirectoryRecursively($dir, 0755);
         }
 
-        $data = file_get_contents($fileName);
-        if ('' === $data || '0' === $data || false === $data) {
+        if (!exists($fileName)) {
+            write($fileName, '');
+        }
+
+        $data = read($fileName);
+        if ('' === $data) {
             return [];
         }
 
         return json_decode($data, true);
     }
 
-    public function set(string $prefix, string $key, array $value): bool
+    public function set(string $prefix, string $key, array|string $value): bool
     {
         $data = $this->load($prefix);
         $data[$key] = $value;
@@ -50,7 +62,7 @@ final readonly class FileStorage implements StorageInterface
         return $this->writeToFile($prefix, json_encode($data));
     }
 
-    public function get(string $prefix, string $key): array
+    public function get(string $prefix, string $key): array|string
     {
         $data = $this->load($prefix);
 
@@ -59,10 +71,15 @@ final readonly class FileStorage implements StorageInterface
 
     private function writeToFile(string $prefix, string $data): bool
     {
-        $lock = $this->lockFactory->create('file');
-        $lock->lock();
-        defer(static fn () => $lock->release());
+        $success = true;
 
-        return (bool) file_put_contents($this->options['path'].'/'.$prefix, $data);
+        try {
+            write($this->options['path'].'/'.$prefix, $data);
+        } catch (\Throwable $e) {
+            $this->logger->error('error while writing file {msg}', ['msg' => $e->getMessage()]);
+            $success = false;
+        }
+
+        return $success;
     }
 }

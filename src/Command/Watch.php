@@ -10,6 +10,7 @@ use PRSW\Docker\Model\Stream;
 use PRSW\SwarmIngress\Ingress\ServiceBuilder;
 use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
 use Psr\Log\LoggerInterface;
+use Revolt\EventLoop;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -46,6 +47,10 @@ final class Watch extends Command
 
         $this->registryManager->init();
 
+        EventLoop::repeat(5, function() use ($io) {
+            $io->writeln((string) memory_get_usage(true));
+        });
+
         if ($eventStream instanceof Stream) {
             /** @var EventMessage $event */
             foreach ($eventStream->stream() as $event) {
@@ -58,17 +63,13 @@ final class Watch extends Command
                         ucfirst($event->getAction())
                     );
 
-                    var_dump($service);
-
                     if (!method_exists($this->registryManager, $eventName)) {
                         throw new \InvalidArgumentException('invalid docker event');
                     }
 
                     $this->registryManager->{$eventName}($service);
                 } catch (\Exception $e) {
-                    $io->warning($e->getMessage());
-
-                    continue;
+                    $this->logger->warning($e->getMessage());
                 }
             }
         }
