@@ -19,12 +19,14 @@ final class SslCertificateTable extends AbstractTable
         string $privateKey,
         string $certificate,
         \DateTimeInterface $expiredAt,
+        string $type,
         bool $auto = true,
     ): void {
         $this->set($domain, [
             'private_key' => $privateKey,
             'certificate' => $certificate,
             'expired_at' => $expiredAt->format(\DateTimeInterface::ISO8601_EXPANDED),
+            'type' => $type,
             'auto' => (int) $auto,
         ]);
     }

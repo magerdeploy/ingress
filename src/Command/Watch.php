@@ -52,7 +52,7 @@ final class Watch extends Command
             /** @var EventMessage $event */
             foreach ($eventStream->stream() as $event) {
                 try {
-                    $service = async(fn() => $this->serviceBuilder->build($event))->await();
+                    $service = async(fn () => $this->serviceBuilder->build($event))->await();
 
                     $eventName = sprintf(
                         'on%s%s',
@@ -66,8 +66,7 @@ final class Watch extends Command
                         throw new \InvalidArgumentException('invalid docker event');
                     }
 
-                    async(fn() => $this->registryManager->{$eventName}($service));
-
+                    async(fn () => $this->registryManager->{$eventName}($service));
                 } catch (\Exception $e) {
                     $this->logger->warning($e->getMessage());
                 }

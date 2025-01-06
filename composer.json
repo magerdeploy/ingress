@@ -18,7 +18,8 @@
         "amphp/parallel": "^2.3",
         "amphp/sync": "^2.3",
         "amphp/http-client-guzzle-adapter": "^1.1",
-        "amphp/log": "^2.0"
+        "amphp/log": "^2.0",
+        "azjezz/psl": "^3.1"
     },
     "license": "MIT",
     "autoload": {
@@ -36,7 +37,7 @@
     "scripts": {
         "cs": ["./vendor/bin/php-cs-fixer check --diff"],
         "cs:fix": ["./vendor/bin/php-cs-fixer fix src"],
-        "phpstan": ["./vendor/bin/phpstan -vvv"],
+        "phpstan": ["./vendor/bin/phpstan -vvv --memory-limit=256M"],
         "ci": ["@cs", "@phpstan"]
     },
     "minimum-stability": "stable",

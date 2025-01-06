@@ -7,6 +7,7 @@ namespace PRSW\SwarmIngress\SslCertificate;
 use AcmePhp\Ssl\KeyPair;
 use DI\Attribute\Inject;
 use PRSW\SwarmIngress\Cache\SslCertificateTable;
+use PRSW\SwarmIngress\Ingress\Service;
 
 final readonly class SelfSignedGenerator implements CertificateGeneratorInterface
 {
@@ -72,11 +73,12 @@ final readonly class SelfSignedGenerator implements CertificateGeneratorInterfac
             return;
         }
 
-        $this->sslCertificateTable->set($domain, [
-            'private_key' => $this->keyPair->getPrivateKey()->getPEM(),
-            'certificate' => $cert,
-            'expired_at' => new \DateTime('+5 years'),
-            'auto' => true,
-        ]);
+        $this->sslCertificateTable->setCertificate(
+            $domain,
+            $this->keyPair->getPrivateKey()->getPEM(),
+            $cert,
+            new \DateTime('+5 years'),
+            Service::AUTO_TLS_SELF_SIGNED
+        );
     }
 }

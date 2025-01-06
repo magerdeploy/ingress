@@ -33,7 +33,7 @@ final class Service
         $labels = $service->getSpec()->getLabels();
 
         $isEnable = $labels['ingress.enable'] ?? null;
-        if ('true' !== $isEnable) {
+        if ('true' !== $isEnable && null === $labels['ingress.domain']) {
             throw new \InvalidArgumentException(
                 sprintf('service not enabled for this container %s', $service->getSpec()->getName())
             );
@@ -54,7 +54,7 @@ final class Service
         $labels = $container->getConfig()->getLabels();
 
         $isEnable = $labels['ingress.enable'] ?? null;
-        if ('true' !== $isEnable) {
+        if ('true' !== $isEnable && null === $labels['ingress.domain']) {
             throw new \InvalidArgumentException(sprintf('service not enabled for this container %s', $container->getName()));
         }
 

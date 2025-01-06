@@ -20,7 +20,7 @@ final readonly class ServiceBuilder
         }
 
         if ('service' === $event->getType()) {
-            return match(true) {
+            return match (true) {
                 'remove' === $event->getAction() => Service::fromServiceId($event->getActor()->getID()),
                 default => Service::fromDockerService($this->docker->serviceInspect($event->getActor()->getID()))
             };

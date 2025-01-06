@@ -4,27 +4,16 @@ declare(strict_types=1);
 
 namespace PRSW\SwarmIngress;
 
-use AcmePhp\Core\AcmeClient;
 use AcmePhp\Core\AcmeClientInterface;
-use AcmePhp\Core\Http\Base64SafeEncoder;
-use AcmePhp\Core\Http\SecureHttpClientFactory;
-use AcmePhp\Core\Http\ServerErrorHandler;
-use AcmePhp\Core\Protocol\ExternalAccount;
 use AcmePhp\Ssl\Generator\KeyPairGenerator;
 use AcmePhp\Ssl\KeyPair;
-use AcmePhp\Ssl\Parser\KeyParser;
 use AcmePhp\Ssl\PrivateKey;
 use AcmePhp\Ssl\PublicKey;
-use AcmePhp\Ssl\Signer\DataSigner;
-use Amp\Http\Client\GuzzleAdapter\GuzzleHandlerAdapter;
-use Amp\Log\ConsoleFormatter;
-use Amp\Log\StreamHandler;
-use GuzzleHttp\Client as GuzzleHttpClient;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\HandlerStack;
-use Monolog\Formatter\LineFormatter;
-use Monolog\Logger;
 use PRSW\Docker\Client;
+use PRSW\SwarmIngress\Async\Acme\ClientFactory as AcmeClientFactory;
+use PRSW\SwarmIngress\Async\Guzzle\HttpClientFactory;
+use PRSW\SwarmIngress\Async\Monolog\LoggerFactory;
 use PRSW\SwarmIngress\Async\Twig\AsyncFileSystemLoader;
 use PRSW\SwarmIngress\Cache\ConfigTable;
 use PRSW\SwarmIngress\Lock\LockInterface;
@@ -37,16 +26,7 @@ use PRSW\SwarmIngress\Store\FileStorage;
 use PRSW\SwarmIngress\Store\StorageInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
-use Symfony\Component\Console\Logger\ConsoleLogger;
-use Symfony\Component\Console\Output\ConsoleOutput;
-use Symfony\Component\Console\Output\OutputInterface;
 use Twig\Environment;
-
-use function Amp\ByteStream\getStdout;
-use function Amp\File\createDirectoryRecursively;
-use function Amp\File\exists;
-use function Amp\File\openFile;
 
 final class ContainerDefinition
 {
@@ -104,57 +84,10 @@ final class ContainerDefinition
             LockInterface::class => static fn (ContainerInterface $c) => match (true) {
                 'file' === $c->get('storage') => MutexLock::class
             },
-            ClientInterface::class => static function (ContainerInterface $c) {
-                return new GuzzleHttpClient([
-                    'handler' => HandlerStack::create(new GuzzleHandlerAdapter()),
-                ]);
-            },
-            AcmeClientInterface::class => static function (ContainerInterface $c) {
-                $options = $c->get('acme.options');
-                $factory = new SecureHttpClientFactory(
-                    $c->get(ClientInterface::class),
-                    new Base64SafeEncoder(),
-                    new KeyParser(),
-                    new DataSigner(),
-                    new ServerErrorHandler()
-                );
-                $httpClient = $factory->createSecureHttpClient($c->get(KeyPair::class));
-                $acme = new AcmeClient($httpClient, $options['directory_url']);
-                $externalAccount = null;
-                if (null !== $options['external_account']['id'] && null !== $options['external_account']['key']) {
-                    $externalAccount = new ExternalAccount($options['external_account']['id'], $options['external_account']['key']);
-                }
-
-                $acme->registerAccount($options['email'], $externalAccount);
-
-                return $acme;
-            },
+            ClientInterface::class => static fn () => HttpClientFactory::create(),
+            AcmeClientInterface::class => static fn (ContainerInterface $c) => AcmeClientFactory::create($c),
             RegistryManagerInterface::class => static fn (ContainerInterface $c) => $c->get(RegistryManager::class),
-            LoggerInterface::class => static function () {
-                $level = match ((int) getenv('SHELL_VERBOSITY')) {
-                    -2 => LogLevel::EMERGENCY,
-                    -1 => LogLevel::ERROR,
-                    2 => LogLevel::INFO,
-                    3 => LogLevel::DEBUG,
-                    default => LogLevel::NOTICE,
-                };
-
-                $logger = new Logger('swarm-ingress');
-                $stdOut = new StreamHandler(getStdout(), $level);
-                $stdOut->setFormatter(new ConsoleFormatter());
-
-                if (!exists(__DIR__.'/../data/log/swarm-ingress.log')) {
-                    createDirectoryRecursively(__DIR__.'/../data/log', 0755);
-                    touch(__DIR__.'/../data/log/swarm-ingress.log');
-                }
-                $file = new StreamHandler(openFile(__DIR__.'/../data/log/swarm-ingress.log', 'w'), $level);
-                $file->setFormatter(new LineFormatter());
-
-                $logger->pushHandler($file);
-                $logger->pushHandler($stdOut);
-
-                return $logger;
-            },
+            LoggerInterface::class => static fn () => LoggerFactory::create(),
             Client::class => static fn (ContainerInterface $c) => Client::withHttpClient(options: $c->get('docker.client.options')),
             Environment::class => static function (ContainerInterface $c) {
                 $loader = new AsyncFileSystemLoader(__DIR__.'/../templates');

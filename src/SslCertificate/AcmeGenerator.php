@@ -17,10 +17,14 @@ use AcmePhp\Ssl\Parser\CertificateParser;
 use DI\Attribute\Inject;
 use GuzzleHttp\ClientInterface;
 use PRSW\SwarmIngress\Cache\SslCertificateTable;
+use PRSW\SwarmIngress\Ingress\Service;
 use PRSW\SwarmIngress\Registry\AcmeHttpChallenge;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\Reloadable;
+use Psl\DateTime\Duration;
 use Psr\Log\LoggerInterface;
+
+use function Psl\Async\sleep;
 
 final readonly class AcmeGenerator implements CertificateGeneratorInterface
 {
@@ -147,6 +151,7 @@ final readonly class AcmeGenerator implements CertificateGeneratorInterface
             $this->keyPair->getPublicKey()->getPEM(),
             $fullChainPem,
             $parsedCertificate->getValidTo(),
+            Service::AUTO_TLS_ACME,
         );
     }
 
@@ -199,7 +204,7 @@ final readonly class AcmeGenerator implements CertificateGeneratorInterface
             } catch (\Exception $e) {
                 $this->logger->warning('failed to get sanity check for acme challenge {domain} {msg}', ['domain' => $domain, 'msg' => $e->getMessage()]);
             } finally {
-                sleep($this->options['sanity_check_interval']);
+                sleep(Duration::seconds($this->options['sanity_check_interval']));
                 ++$try;
             }
         }
