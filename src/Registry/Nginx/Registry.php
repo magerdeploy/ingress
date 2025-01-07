@@ -39,7 +39,6 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
     public function init(): void
     {
         $nginxConfig = $this->twig->render('nginx/nginx-conf.html.twig', $this->options['options']);
-
         write($this->options['nginx_conf_path'], $nginxConfig);
     }
 

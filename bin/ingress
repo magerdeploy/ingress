@@ -11,6 +11,8 @@ use Symfony\Component\Dotenv\Dotenv;
 
 use function Amp\async;
 
+require_once __DIR__ . '/../src/constant.php';
+
 error_reporting(~E_WARNING);
 
 $dotenv = new Dotenv();
