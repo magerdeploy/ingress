@@ -14,4 +14,7 @@ FROM base as prod
 
 COPY --links . /app
 
+EXPOSE 80/tcp
+EXPOSE 443/tcp
+
 RUN composer install && composer dumpautoload -o
