@@ -32,13 +32,16 @@ class SslCertificateTable extends AbstractTable
     }
 
     /**
-     * @return array<string, bool>
+     * @return array<string, array<int, mixed>>
      */
     public function listDomains(): array
     {
         $domains = [];
         foreach ($this->data as $key => $value) {
-            $domains[$key] = (bool) ($value['auto'] ?? 0);
+            $domains[$key] = [
+                (bool) ($value['auto'] ?? 0),
+                $value['type'],
+            ];
         }
 
         return $domains;

@@ -8,6 +8,7 @@ use AcmePhp\Ssl\KeyPair;
 use DI\Attribute\Inject;
 use PRSW\SwarmIngress\Cache\SslCertificateTable;
 use PRSW\SwarmIngress\Ingress\Service;
+use Psr\Log\LoggerInterface;
 
 final readonly class SelfSignedGenerator implements CertificateGeneratorInterface
 {
@@ -17,6 +18,7 @@ final readonly class SelfSignedGenerator implements CertificateGeneratorInterfac
     public function __construct(
         private KeyPair $keyPair,
         private SslCertificateTable $sslCertificateTable,
+        private LoggerInterface $logger,
         #[Inject('self_signed.options')]
         private array $options,
     ) {}
@@ -44,6 +46,8 @@ final readonly class SelfSignedGenerator implements CertificateGeneratorInterfac
         $expiredAt = new \DateTime($expiredAt);
         $interval = $expiredAt->diff(new \DateTime());
         if ((int) $interval->days > 30) {
+            $this->logger->warning('certificate not expired yet, skipping renewal', ['domain' => $domain, 'type' => Service::AUTO_TLS_SELF_SIGNED]);
+
             return;
         }
 
@@ -93,5 +97,7 @@ final readonly class SelfSignedGenerator implements CertificateGeneratorInterfac
             new \DateTime('+5 years'),
             Service::AUTO_TLS_SELF_SIGNED
         );
+
+        $this->logger->info('ssl certificate generated', ['domain' => $domain, 'type' => Service::AUTO_TLS_SELF_SIGNED]);
     }
 }

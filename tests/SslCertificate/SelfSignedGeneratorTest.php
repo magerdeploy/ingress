@@ -8,18 +8,23 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use PRSW\SwarmIngress\SslCertificate\SelfSignedGenerator;
 use PRSW\SwarmIngress\Cache\SslCertificateTable;
+use Psr\Log\LoggerInterface;
 
 class SelfSignedGeneratorTest extends TestCase
 {
     private SelfSignedGenerator $generator;
     private SslCertificateTable|MockObject $sslCertificateTable;
 
+    private LoggerInterface|MockObject $logger;
+
     protected function setUp(): void
     {
         $this->sslCertificateTable = $this->createMock(SslCertificateTable::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->generator = new SelfSignedGenerator(
             (new KeyPairGenerator())->generateKeyPair(),
             $this->sslCertificateTable,
+            $this->logger,
             ['ca' => '']
         );
     }
@@ -111,6 +116,7 @@ CAPKEY;
         $this->generator = new SelfSignedGenerator(
             (new KeyPairGenerator())->generateKeyPair(),
             $this->sslCertificateTable,
+            $this->logger,
             ['ca' => $ca, 'ca_private_key' => $caPkey]
         );
 

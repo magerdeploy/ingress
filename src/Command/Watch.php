@@ -7,13 +7,16 @@ namespace PRSW\SwarmIngress\Command;
 use PRSW\Docker\Client;
 use PRSW\Docker\Generated\Model\EventMessage;
 use PRSW\Docker\Model\Stream;
+use PRSW\SwarmIngress\Cache\SslCertificateTable;
 use PRSW\SwarmIngress\Ingress\ServiceBuilder;
 use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
+use PRSW\SwarmIngress\SslCertificate\CertificateManager;
+use Psl\Async\Scheduler;
+use Psl\DateTime\Duration;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 use function Amp\async;
 
@@ -24,14 +27,14 @@ final class Watch extends Command
         private readonly Client $docker,
         private readonly RegistryManagerInterface $registryManager,
         private readonly ServiceBuilder $serviceBuilder,
+        private readonly SslCertificateTable $sslCertificateTable,
+        private readonly CertificateManager $certificateManager,
     ) {
         parent::__construct('watch');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
-
         $filters = json_encode([
             'type' => [
                 'container', 'service',
@@ -45,6 +48,18 @@ final class Watch extends Command
         $eventStream = $this->docker->systemEvents(['filters' => $filters], Client::FETCH_STREAM);
 
         $this->registryManager->init();
+
+        Scheduler::repeat(Duration::days(1), function () {
+            $this->logger->info('ssl certificate renewal started');
+            foreach ($this->sslCertificateTable->listDomains() as $domain => [$auto, $type]) {
+                if (!$auto) {
+                    continue;
+                }
+
+                $this->certificateManager->renew($type, $domain);
+            }
+            $this->logger->info('ssl certificate renewal finished');
+        });
 
         $this->logger->info('docker watcher started');
 

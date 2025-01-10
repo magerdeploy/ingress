@@ -22,7 +22,9 @@ final readonly class RegistryManager implements RegistryManagerInterface
             return;
         }
 
-        $this->certificateManager->create($service);
+        if (null !== $service->autoTls) {
+            $this->certificateManager->create($service->autoTls, $service->domain);
+        }
 
         if ($this->serviceTable->exist($service->getIdentifier()) && $this->registry instanceof CanToManageUpstream) {
             $this->registry->addUpstream($service);

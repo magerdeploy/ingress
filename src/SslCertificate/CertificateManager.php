@@ -13,22 +13,22 @@ final readonly class CertificateManager
         private ContainerInterface $container,
     ) {}
 
-    public function create(Service $service): void
+    public function create(string $type, string $domain): void
     {
-        $this->getGenerator($service)->createNewCertificate($service->domain);
+        $this->getGenerator($type)->createNewCertificate($domain);
     }
 
-    public function renew(Service $service): void
+    public function renew(string $type, string $domain): void
     {
-        $this->getGenerator($service)->renew($service->domain);
+        $this->getGenerator($type)->renew($domain);
     }
 
-    public function getGenerator(Service $service): CertificateGeneratorInterface
+    public function getGenerator(string $type): CertificateGeneratorInterface
     {
         return match (true) {
-            Service::AUTO_TLS_SELF_SIGNED === $service->autoTls => $this->container->get(SelfSignedGenerator::class),
-            Service::AUTO_TLS_ACME === $service->autoTls => $this->container->get(AcmeGenerator::class),
-            default => throw new \InvalidArgumentException('auto tls not activated for '.$service->domain),
+            Service::AUTO_TLS_SELF_SIGNED === $type => $this->container->get(SelfSignedGenerator::class),
+            Service::AUTO_TLS_ACME === $type => $this->container->get(AcmeGenerator::class),
+            default => throw new \InvalidArgumentException('invalid auto tls type'),
         };
     }
 }
