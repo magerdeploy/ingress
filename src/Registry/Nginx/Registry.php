@@ -15,7 +15,6 @@ use PRSW\SwarmIngress\Registry\Initializer;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\Reloadable;
 use Psr\Log\LoggerInterface;
-use Revolt\EventLoop;
 use Twig\Environment;
 
 use function Amp\File\createDirectoryRecursively;
@@ -45,7 +44,7 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
     public function reload(): void
     {
-        if (! $this->checkConfig()) {
+        if (!$this->checkConfig()) {
             return;
         }
 

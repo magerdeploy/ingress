@@ -65,9 +65,22 @@ final readonly class SelfSignedGenerator implements CertificateGeneratorInterfac
         $ca = openssl_x509_read($this->options['ca']);
         $ca = false !== $ca ? $ca : null;
 
+        $caPrivateKey = null;
+        if (null !== $ca) {
+            $caPrivateKey = openssl_pkey_get_private($this->options['ca_private_key']);
+            if (false === $caPrivateKey) {
+                throw new \RuntimeException('CA private key not valid');
+            }
+        }
+
         $pkey = openssl_pkey_get_private($this->keyPair->getPrivateKey()->getPEM());
         $csr = openssl_csr_new($dn, $pkey, ['digest_alg' => 'sha256']);
-        $x509 = openssl_csr_sign($csr, $ca, $pkey, 365 * 5, ['digest_alg' => 'sha256']);
+
+        if (null !== $caPrivateKey) {
+            $x509 = openssl_csr_sign($csr, $ca, $caPrivateKey, 365 * 5, ['digest_alg' => 'sha256']);
+        } else {
+            $x509 = openssl_csr_sign($csr, $ca, $pkey, 365 * 5, ['digest_alg' => 'sha256']);
+        }
 
         if (!openssl_x509_export($x509, $cert)) {
             return;

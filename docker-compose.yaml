@@ -7,3 +7,11 @@ services:
         volumes:
             - .:/app
             - /var/run/docker.sock:/var/run/docker.sock
+        networks:
+            - ingress
+        ports:
+            - "80:80"
+            - "443:443"
+networks:
+    ingress:
+        driver: bridge

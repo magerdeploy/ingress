@@ -34,7 +34,7 @@ class ServiceTable extends AbstractTable
 
     public function removeUpstream(string $key, string $upstream): void
     {
-        $upstreamList = $this->get($key, 'upstream');
+        $upstreamList = $this->get($key, 'upstream') ?? [];
         if ([] === $upstreamList) {
             return;
         }
@@ -59,7 +59,7 @@ class ServiceTable extends AbstractTable
      */
     public function getUpstream(string $key): array
     {
-        return $this->get($key, 'upstream');
+        return $this->get($key, 'upstream') ?? [];
     }
 
     public function getName(): string

@@ -12,7 +12,7 @@ CMD ["/usr/local/bin/supervisord", "-c", "/app/docker/supervisor/supervisor.conf
 
 FROM base as prod
 
-COPY --links . /app
+COPY --link . /app
 
 EXPOSE 80/tcp
 EXPOSE 443/tcp

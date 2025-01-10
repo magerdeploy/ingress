@@ -15,11 +15,11 @@ server {
 
     server_name             {{ domain }};
 
-    {% if ssl_enabled == true %}
-        # SSL
-        ssl_certificate         {{ certificate.cert }}
-        ssl_certificate_key     {{ certificate.key }}
-    {% endif %}
+{% if ssl_enabled == true %}
+    # SSL
+    ssl_certificate         {{ certificate.cert }};
+    ssl_certificate_key     {{ certificate.key }};
+{% endif %}
 
     # security headers
     add_header X-XSS-Protection          "1; mode=block" always;
@@ -35,18 +35,15 @@ server {
     }
 
     # logging
-    access_log              /var/log/nginx/{{ domain }}access.log combined buffer=512k flush=1m;
-    error_log               /var/log/nginx/{{ domain }}error.log warn;
+    access_log              /var/log/nginx/{{ domain }}.access.log combined buffer=512k flush=1m;
+    error_log               /var/log/nginx/{{ domain }}.error.log warn;
 
     # reverse proxy
     location / {
-        proxy_pass                         http://upstream-{{ domain }}
+        proxy_pass                         http://upstream-{{ domain }};
         proxy_set_header Host              $host;
         proxy_http_version                 1.1;
         proxy_cache_bypass                 $http_upgrade;
-
-        # Proxy SSL
-        proxy_ssl_server_name              on;
 
         # Proxy headers
         proxy_set_header Upgrade           $http_upgrade;

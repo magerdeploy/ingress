@@ -20,6 +20,9 @@ final class RegistryTest extends TestCase
     private SslCertificateTable|MockObject $SSLCertificateTable;
     private Registry $nginx;
 
+    /**
+     * @var array <string, mixed>
+     */
     private array $nginxConfig;
 
     public function setUp(): void
@@ -52,7 +55,7 @@ final class RegistryTest extends TestCase
         $this->assertNotEmpty(file_get_contents($this->nginxConfig['nginx_conf_path']));
     }
 
-    public function testAddServiceSuccess()
+    public function testAddServiceSuccess(): void
     {
         $service = new Service();
         $service->type = Service::TYPE_CONTAINER;

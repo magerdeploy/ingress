@@ -6,11 +6,13 @@ namespace PRSW\SwarmIngress\Registry;
 
 use PRSW\SwarmIngress\Cache\ServiceTable;
 use PRSW\SwarmIngress\Ingress\Service;
+use PRSW\SwarmIngress\SslCertificate\CertificateManager;
 
 final readonly class RegistryManager implements RegistryManagerInterface
 {
     public function __construct(
         private RegistryInterface $registry,
+        private CertificateManager $certificateManager,
         private ServiceTable $serviceTable,
     ) {}
 
@@ -19,6 +21,8 @@ final readonly class RegistryManager implements RegistryManagerInterface
         if (Service::TYPE_SERVICE === $service->type) {
             return;
         }
+
+        $this->certificateManager->create($service);
 
         if ($this->serviceTable->exist($service->getIdentifier()) && $this->registry instanceof CanToManageUpstream) {
             $this->registry->addUpstream($service);

@@ -61,6 +61,7 @@ final class ContainerDefinition
             ],
             'self_signed.options' => [
                 'ca' => $_ENV['SELF_SIGNED_CA'],
+                'ca_private_key' => $_ENV['SELF_SIGNED_CA_PRIVATE_KEY'],
             ],
             'acme.options' => [
                 'email' => $_ENV['ACME_EMAIL'] ?? 'admin@localhost',
@@ -98,18 +99,18 @@ final class ContainerDefinition
                 /** @var ConfigTable $config */
                 $config = $c->get(ConfigTable::class);
 
-                if (!$config->exist('acme.private_key') || !$config->exist('acme.public_key')) {
+                if (!$config->exist('ssl.private_key') || !$config->exist('ssl.public_key')) {
                     $k = new KeyPairGenerator();
                     $pair = $k->generateKeyPair();
-                    $config->set('acme.private_key', $pair->getPrivateKey()->getDER());
-                    $config->set('acme.public_key', $pair->getPublicKey()->getDER());
+                    $config->set('ssl.private_key', base64_encode($pair->getPrivateKey()->getDER()));
+                    $config->set('ssl.public_key', base64_encode($pair->getPublicKey()->getDER()));
 
                     return $pair;
                 }
 
                 return new KeyPair(
-                    PublicKey::fromDER($config->get('acme.private_key')),
-                    PrivateKey::fromDER($config->get('acme.public_key'))
+                    PublicKey::fromDER(base64_decode($config->get('ssl.private_key'))),
+                    PrivateKey::fromDER(base64_decode($config->get('ssl.public_key')))
                 );
             },
         ];
