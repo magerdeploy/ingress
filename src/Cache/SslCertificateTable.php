@@ -6,7 +6,7 @@ namespace PRSW\SwarmIngress\Cache;
 
 use PRSW\SwarmIngress\Store\StorageInterface;
 
-final class SslCertificateTable extends AbstractTable
+class SslCertificateTable extends AbstractTable
 {
     public function __construct(StorageInterface $storage)
     {

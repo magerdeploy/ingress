@@ -6,7 +6,7 @@ namespace PRSW\SwarmIngress\Cache;
 
 use PRSW\SwarmIngress\Store\StorageInterface;
 
-final class ServiceTable extends AbstractTable
+class ServiceTable extends AbstractTable
 {
     public function __construct(StorageInterface $storage)
     {

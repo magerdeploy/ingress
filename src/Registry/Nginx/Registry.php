@@ -15,6 +15,7 @@ use PRSW\SwarmIngress\Registry\Initializer;
 use PRSW\SwarmIngress\Registry\RegistryInterface;
 use PRSW\SwarmIngress\Registry\Reloadable;
 use Psr\Log\LoggerInterface;
+use Revolt\EventLoop;
 use Twig\Environment;
 
 use function Amp\File\createDirectoryRecursively;
@@ -44,10 +45,7 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
     public function reload(): void
     {
-        $checkConfig = Process::start(['nginx', '-t']);
-        if (0 !== $checkConfig->join()) {
-            $this->logger->error('invalid nginx configuration, reload aborted');
-
+        if (! $this->checkConfig()) {
             return;
         }
 
@@ -132,6 +130,18 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
         ] + $this->dumpCertificate($service->domain));
 
         write($fileName, $vhost);
+    }
+
+    private function checkConfig(): bool
+    {
+        $checkConfig = Process::start(['nginx', '-t']);
+        if (0 !== $checkConfig->join()) {
+            $this->logger->error('invalid nginx configuration, operation aborted');
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

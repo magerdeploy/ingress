@@ -53,7 +53,7 @@ final class ContainerDefinition
                 'nginx_conf_path' => $_ENV['NGINX_CONF_PATH'] ?? '/etc/nginx/nginx.conf',
                 'nginx_vhost_dir' => $_ENV['NGINX_VHOST_DIR'] ?? '/etc/nginx/sites-enabled',
                 'nginx_vhost_ssl_key_path' => $_ENV['NGINX_VHOST_SSL_KEY_PATH'] ?? '/etc/nginx/ssl/%s/private-key.pem',
-                'nginx_vhost_ssl_certificate_path' => $_ENV['NGINX_VHOST_SSL_CERTIFICATE_PATH'] ?? '/app/nginx/ssl/%s/fullchain.pem',
+                'nginx_vhost_ssl_certificate_path' => $_ENV['NGINX_VHOST_SSL_CERTIFICATE_PATH'] ?? '/etc/nginx/ssl/%s/fullchain.pem',
                 'options' => [
                     'client_max_body_size' => $_ENV['NGINX_CLIENT_MAX_BODY_SIZE'] ?? '16M',
                     'worker_connections' => $_ENV['NGINX_CLIENT_MAX_CONNECTIONS'] ?? 65535,
