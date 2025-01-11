@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\SslCertificate;
+namespace PRSW\Ingress\SslCertificate;
 
-use PRSW\SwarmIngress\Ingress\Service;
+use PRSW\Ingress\Registry\Service;
 use Psr\Container\ContainerInterface;
 
 final readonly class CertificateManager

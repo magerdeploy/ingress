@@ -24,8 +24,8 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "PRSW\\SwarmIngress\\": "src/",
-            "PRSW\\SwarmIngress\\Tests\\": "tests"
+            "PRSW\\Ingress\\": "src/",
+            "PRSW\\Ingress\\Tests\\": "tests"
         }
     },
     "authors": [

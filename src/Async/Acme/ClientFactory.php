@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Async\Acme;
+namespace PRSW\Ingress\Async\Acme;
 
 use AcmePhp\Core\AcmeClientInterface;
 use AcmePhp\Core\Http\Base64SafeEncoder;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Store;
+namespace PRSW\Ingress\Store;
 
 use DI\Attribute\Inject;
 use Psr\Log\LoggerInterface;

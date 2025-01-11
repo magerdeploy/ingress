@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Registry;
+namespace PRSW\Ingress\Registry;
 
-use PRSW\SwarmIngress\Cache\ServiceTable;
-use PRSW\SwarmIngress\Ingress\Service;
-use PRSW\SwarmIngress\SslCertificate\CertificateManager;
+use PRSW\Ingress\Cache\ServiceTable;
+use PRSW\Ingress\SslCertificate\CertificateManager;
 
 final readonly class RegistryManager implements RegistryManagerInterface
 {

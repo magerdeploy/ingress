@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress;
+namespace PRSW\Ingress;
 
 use AcmePhp\Core\AcmeClientInterface;
 use AcmePhp\Ssl\Generator\KeyPairGenerator;
@@ -11,19 +11,19 @@ use AcmePhp\Ssl\PrivateKey;
 use AcmePhp\Ssl\PublicKey;
 use GuzzleHttp\ClientInterface;
 use PRSW\Docker\Client;
-use PRSW\SwarmIngress\Async\Acme\ClientFactory as AcmeClientFactory;
-use PRSW\SwarmIngress\Async\Guzzle\HttpClientFactory;
-use PRSW\SwarmIngress\Async\Monolog\LoggerFactory;
-use PRSW\SwarmIngress\Async\Twig\AsyncFileSystemLoader;
-use PRSW\SwarmIngress\Cache\ConfigTable;
-use PRSW\SwarmIngress\Lock\LockInterface;
-use PRSW\SwarmIngress\Lock\MutexLock;
-use PRSW\SwarmIngress\Registry\Nginx\Registry;
-use PRSW\SwarmIngress\Registry\RegistryInterface;
-use PRSW\SwarmIngress\Registry\RegistryManager;
-use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
-use PRSW\SwarmIngress\Store\FileStorage;
-use PRSW\SwarmIngress\Store\StorageInterface;
+use PRSW\Ingress\Async\Acme\ClientFactory as AcmeClientFactory;
+use PRSW\Ingress\Async\Guzzle\HttpClientFactory;
+use PRSW\Ingress\Async\Monolog\LoggerFactory;
+use PRSW\Ingress\Async\Twig\AsyncFileSystemLoader;
+use PRSW\Ingress\Cache\ConfigTable;
+use PRSW\Ingress\Lock\LockInterface;
+use PRSW\Ingress\Lock\MutexLock;
+use PRSW\Ingress\Registry\Nginx\Registry;
+use PRSW\Ingress\Registry\RegistryInterface;
+use PRSW\Ingress\Registry\RegistryManager;
+use PRSW\Ingress\Registry\RegistryManagerInterface;
+use PRSW\Ingress\Store\FileStorage;
+use PRSW\Ingress\Store\StorageInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Twig\Environment;

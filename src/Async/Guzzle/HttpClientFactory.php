@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Async\Guzzle;
+namespace PRSW\Ingress\Async\Guzzle;
 
 use Amp\Http\Client\GuzzleAdapter\GuzzleHandlerAdapter;
 use GuzzleHttp\Client as GuzzleHttpClient;

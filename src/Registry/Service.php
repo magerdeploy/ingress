@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Ingress;
+namespace PRSW\Ingress\Registry;
 
 use PRSW\Docker\Generated\Model\ContainersIdJsonGetResponse200 as DockerContainer;
 use PRSW\Docker\Generated\Model\Service as DockerService;

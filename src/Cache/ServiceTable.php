@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Cache;
+namespace PRSW\Ingress\Cache;
 
-use PRSW\SwarmIngress\Store\StorageInterface;
+use PRSW\Ingress\Store\StorageInterface;
 
 class ServiceTable extends AbstractTable
 {

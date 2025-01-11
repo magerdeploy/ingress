@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Command;
+namespace PRSW\Ingress\Command;
 
 use PRSW\Docker\Client;
 use PRSW\Docker\Generated\Model\EventMessage;
 use PRSW\Docker\Model\Stream;
-use PRSW\SwarmIngress\Cache\SslCertificateTable;
-use PRSW\SwarmIngress\Ingress\ServiceBuilder;
-use PRSW\SwarmIngress\Registry\RegistryManagerInterface;
-use PRSW\SwarmIngress\SslCertificate\CertificateManager;
+use PRSW\Ingress\Cache\SslCertificateTable;
+use PRSW\Ingress\Registry\RegistryManagerInterface;
+use PRSW\Ingress\Registry\ServiceBuilder;
+use PRSW\Ingress\SslCertificate\CertificateManager;
 use Psl\Async\Scheduler;
 use Psl\DateTime\Duration;
 use Psr\Log\LoggerInterface;
@@ -49,7 +49,7 @@ final class Watch extends Command
 
         $this->registryManager->init();
 
-        Scheduler::repeat(Duration::days(1), function () {
+        $timerId = Scheduler::repeat(Duration::days(1), function () {
             $this->logger->info('ssl certificate renewal started');
             foreach ($this->sslCertificateTable->listDomains() as $domain => [$auto, $type]) {
                 if (!$auto) {

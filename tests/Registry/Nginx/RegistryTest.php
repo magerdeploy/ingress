@@ -1,13 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Tests\Registry\Nginx;
+namespace PRSW\Ingress\Tests\Registry\Nginx;
+
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use PRSW\SwarmIngress\Ingress\Service;
-use PRSW\SwarmIngress\Registry\Nginx\Registry;
-use PRSW\SwarmIngress\Cache\SslCertificateTable;
-use PRSW\SwarmIngress\Cache\ServiceTable;
+use PRSW\Ingress\Registry\Service;
+use PRSW\Ingress\Registry\Nginx\Registry;
+use PRSW\Ingress\Cache\SslCertificateTable;
+use PRSW\Ingress\Cache\ServiceTable;
 use Psr\Log\LoggerInterface;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;

@@ -4,9 +4,9 @@
 require __DIR__.'/../vendor/autoload.php';
 
 use DI\ContainerBuilder;
-use PRSW\SwarmIngress\ConsoleApplication;
-use PRSW\SwarmIngress\ContainerDefinition;
-use PRSW\SwarmIngress\Command\Watch;
+use PRSW\Ingress\ConsoleApplication;
+use PRSW\Ingress\ContainerDefinition;
+use PRSW\Ingress\Command\Watch;
 use Symfony\Component\Dotenv\Dotenv;
 
 use function Amp\async;

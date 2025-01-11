@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Async\Monolog;
+namespace PRSW\Ingress\Async\Monolog;
 
 use Amp\Log\ConsoleFormatter;
 use Amp\Log\StreamHandler;

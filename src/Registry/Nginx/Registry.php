@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Registry\Nginx;
+namespace PRSW\Ingress\Registry\Nginx;
 
 use Amp\Process\Process;
 use DI\Attribute\Inject;
-use PRSW\SwarmIngress\Cache\ServiceTable;
-use PRSW\SwarmIngress\Cache\SslCertificateTable;
-use PRSW\SwarmIngress\Ingress\Service;
-use PRSW\SwarmIngress\Registry\AcmeHttpChallenge;
-use PRSW\SwarmIngress\Registry\CanToManageUpstream;
-use PRSW\SwarmIngress\Registry\Initializer;
-use PRSW\SwarmIngress\Registry\RegistryInterface;
-use PRSW\SwarmIngress\Registry\Reloadable;
+use PRSW\Ingress\Cache\ServiceTable;
+use PRSW\Ingress\Cache\SslCertificateTable;
+use PRSW\Ingress\Registry\AcmeHttpChallenge;
+use PRSW\Ingress\Registry\CanToManageUpstream;
+use PRSW\Ingress\Registry\Initializer;
+use PRSW\Ingress\Registry\RegistryInterface;
+use PRSW\Ingress\Registry\Reloadable;
+use PRSW\Ingress\Registry\Service;
 use Psr\Log\LoggerInterface;
 use Twig\Environment;
 

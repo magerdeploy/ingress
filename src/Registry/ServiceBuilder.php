@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Ingress;
+namespace PRSW\Ingress\Registry;
 
 use PRSW\Docker\Client;
 use PRSW\Docker\Generated\Model\EventMessage;

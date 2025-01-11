@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Registry;
+namespace PRSW\Ingress\Registry;
 
 interface Initializer
 {

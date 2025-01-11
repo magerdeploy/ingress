@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Lock;
+namespace PRSW\Ingress\Lock;
 
 use Psr\Container\ContainerInterface;
 

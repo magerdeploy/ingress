@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\SslCertificate;
+namespace PRSW\Ingress\SslCertificate;
 
 use AcmePhp\Ssl\KeyPair;
 use DI\Attribute\Inject;
-use PRSW\SwarmIngress\Cache\SslCertificateTable;
-use PRSW\SwarmIngress\Ingress\Service;
+use PRSW\Ingress\Cache\SslCertificateTable;
+use PRSW\Ingress\Registry\Service;
 use Psr\Log\LoggerInterface;
 
 final readonly class SelfSignedGenerator implements CertificateGeneratorInterface

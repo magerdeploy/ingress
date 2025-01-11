@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\SslCertificate;
+namespace PRSW\Ingress\SslCertificate;
 
 interface CertificateGeneratorInterface
 {

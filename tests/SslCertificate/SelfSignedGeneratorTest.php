@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Tests\SslCertificate;
+namespace PRSW\Ingress\Tests\SslCertificate;
 
 use AcmePhp\Ssl\Generator\KeyPairGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use PRSW\SwarmIngress\SslCertificate\SelfSignedGenerator;
-use PRSW\SwarmIngress\Cache\SslCertificateTable;
+use PRSW\Ingress\SslCertificate\SelfSignedGenerator;
+use PRSW\Ingress\Cache\SslCertificateTable;
 use Psr\Log\LoggerInterface;
 
 class SelfSignedGeneratorTest extends TestCase

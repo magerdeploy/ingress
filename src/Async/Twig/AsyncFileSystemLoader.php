@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Async\Twig;
+namespace PRSW\Ingress\Async\Twig;
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Source;

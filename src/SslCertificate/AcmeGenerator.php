@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\SslCertificate;
+namespace PRSW\Ingress\SslCertificate;
 
 use AcmePhp\Core\AcmeClientInterface;
 use AcmePhp\Core\Challenge\Http\HttpValidator;
@@ -16,11 +16,11 @@ use AcmePhp\Ssl\KeyPair;
 use AcmePhp\Ssl\Parser\CertificateParser;
 use DI\Attribute\Inject;
 use GuzzleHttp\ClientInterface;
-use PRSW\SwarmIngress\Cache\SslCertificateTable;
-use PRSW\SwarmIngress\Ingress\Service;
-use PRSW\SwarmIngress\Registry\AcmeHttpChallenge;
-use PRSW\SwarmIngress\Registry\RegistryInterface;
-use PRSW\SwarmIngress\Registry\Reloadable;
+use PRSW\Ingress\Cache\SslCertificateTable;
+use PRSW\Ingress\Registry\AcmeHttpChallenge;
+use PRSW\Ingress\Registry\RegistryInterface;
+use PRSW\Ingress\Registry\Reloadable;
+use PRSW\Ingress\Registry\Service;
 use Psl\DateTime\Duration;
 use Psr\Log\LoggerInterface;
 

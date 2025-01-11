@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PRSW\SwarmIngress\Registry;
-
-use PRSW\SwarmIngress\Ingress\Service;
+namespace PRSW\Ingress\Registry;
 
 interface RegistryInterface
 {
