@@ -1,11 +1,11 @@
 user                 nginx;
 pid                  /var/run/nginx.pid;
 worker_processes     auto;
-worker_rlimit_nofile {{ worker_connections }};
+worker_rlimit_nofile {{ options['worker_connections'] }};
 
 events {
     multi_accept       on;
-    worker_connections {{ worker_connections }};
+    worker_connections {{ options['worker_connections'] }};
 }
 
 http {
