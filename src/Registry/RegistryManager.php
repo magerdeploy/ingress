@@ -75,7 +75,8 @@ final readonly class RegistryManager implements RegistryManagerInterface
                     }
                 }
                 if ($removeService) {
-                    $this->registry->removeUpstream($service);
+                    $this->serviceTable->del($service->getIdentifier());
+                    $this->registry->removeService($service);
                 } else {
                     $this->registry->removeUpstream($service);
                 }
