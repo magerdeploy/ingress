@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PRSW\Ingress\Cache;
 
 use PRSW\Ingress\Store\StorageInterface;
+use Psl\Hash\Algorithm;
 
 class ServiceTable extends AbstractTable
 {
@@ -14,12 +15,16 @@ class ServiceTable extends AbstractTable
         $this->load();
     }
 
-    public function addUpstream(string $key, string $upstream): void
+    public function addUpstream(string $key, string $path, string $upstream): void
     {
-        $upstreamList = $this->get($key, 'upstream');
+        $pathKey = \Psl\Hash\hash($path, Algorithm::Xxh32);
+        $upstreamList = $this->get($key, $pathKey)['upstream'] ?? [];
         if (empty($upstreamList)) {
             $upstreamList[$upstream] = 1;
-            $this->set($key, ['upstream' => $upstreamList]);
+            $this->set($key, [$pathKey => [
+                'path' => $path,
+                'upstream' => $upstreamList,
+            ]]);
 
             return;
         }
@@ -29,12 +34,16 @@ class ServiceTable extends AbstractTable
         }
 
         $upstreamList[$upstream] = 1;
-        $this->set($key, ['upstream' => $upstreamList]);
+        $this->set($key, [$pathKey => [
+            'path' => $path,
+            'upstream' => $upstreamList,
+        ]]);
     }
 
-    public function removeUpstream(string $key, string $upstream): void
+    public function removeUpstream(string $key, string $path, string $upstream): void
     {
-        $upstreamList = $this->get($key, 'upstream') ?? [];
+        $pathKey = \Psl\Hash\hash($path, Algorithm::Xxh32);
+        $upstreamList = $this->get($key, $pathKey)['upstream'] ?? [];
         if ([] === $upstreamList) {
             return;
         }
@@ -46,20 +55,23 @@ class ServiceTable extends AbstractTable
         unset($upstreamList[$upstream]);
         // if no upstream left remove the key
         if (0 === count($upstreamList)) {
-            $this->del($key);
-
-            return;
+            $this->unsetField($key, $pathKey);
         }
 
-        $this->set($key, ['upstream' => $upstreamList]);
+        $this->set($key, [$pathKey => [
+            'path' => $path,
+            'upstream' => $upstreamList,
+        ]]);
     }
 
     /**
      * @return array<string,array<string, int>>
      */
-    public function getUpstream(string $key): array
+    public function getUpstream(string $key, string $path): array
     {
-        return $this->get($key, 'upstream') ?? [];
+        $pathKey = \Psl\Hash\hash($path, Algorithm::Xxh32);
+
+        return $this->get($key, $pathKey) ?? [];
     }
 
     public function getName(): string

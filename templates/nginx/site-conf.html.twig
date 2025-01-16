@@ -1,8 +1,10 @@
-upstream upstream-{{ domain }} {
-{% for k,v in upstream %}
-    server {{ k }};
-{% endfor %}
+{% for k, u in upstream %}
+upstream upstream-{{ domain ~ '-' ~ k }} {
+    {% for v,i in u.upstream %}
+        server {{ v }};
+    {% endfor %}
 }
+{% endfor %}
 
 server {
 {% if ssl_enabled == true %}
@@ -38,9 +40,9 @@ server {
     access_log              /var/log/nginx/{{ domain }}.access.log combined buffer=512k flush=1m;
     error_log               /var/log/nginx/{{ domain }}.error.log warn;
 
-    # reverse proxy
-    location / {
-        proxy_pass                         http://upstream-{{ domain }};
+{% for k, u in upstream %}
+    location {{ u.path }} {
+        proxy_pass                         http://upstream-{{ domain ~ '-' ~ k }};
         proxy_set_header Host              $host;
         proxy_http_version                 1.1;
         proxy_cache_bypass                 $http_upgrade;
@@ -60,6 +62,7 @@ server {
         proxy_send_timeout                 60s;
         proxy_read_timeout                 60s;
     }
+{% endfor %}
 
     ## favicon.ico
     location = /favicon.ico {

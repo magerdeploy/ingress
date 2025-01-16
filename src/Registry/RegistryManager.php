@@ -6,6 +6,7 @@ namespace PRSW\Ingress\Registry;
 
 use PRSW\Ingress\Cache\ServiceTable;
 use PRSW\Ingress\SslCertificate\CertificateManager;
+use Psr\Log\LoggerInterface;
 
 final readonly class RegistryManager implements RegistryManagerInterface
 {
@@ -13,6 +14,7 @@ final readonly class RegistryManager implements RegistryManagerInterface
         private RegistryInterface $registry,
         private CertificateManager $certificateManager,
         private ServiceTable $serviceTable,
+        private LoggerInterface $logger,
     ) {}
 
     public function onContainerStart(Service $service): void
@@ -25,15 +27,35 @@ final readonly class RegistryManager implements RegistryManagerInterface
             $this->certificateManager->create($service->autoTls, $service->domain);
         }
 
-        if ($this->serviceTable->exist($service->getIdentifier()) && $this->registry instanceof CanToManageUpstream) {
-            $this->registry->addUpstream($service);
-            $this->reload();
+        $this->serviceTable->addUpstream($service->getIdentifier(), $service->path, $service->upstream);
 
-            return;
+        if ($this->serviceTable->exist($service->getIdentifier()) && $this->registry instanceof CanToManageUpstream) {
+            try {
+                $this->registry->addUpstream($service);
+                $this->reload();
+
+                return;
+            } catch (\Throwable $e) {
+                $this->logger->warning('failed to add service/upstream, performing rollback', ['service' => $service]);
+
+                $this->serviceTable->removeUpstream($service->getIdentifier(), $service->path, $service->upstream);
+                $this->registry->removeUpstream($service);
+
+                throw $e;
+            }
         }
 
-        $this->registry->addService($service);
-        $this->reload();
+        try {
+            $this->registry->addService($service);
+            $this->reload();
+        } catch (\Throwable $e) {
+            $this->logger->warning('failed to add service/upstream, performing rollback', ['service' => $service]);
+
+            $this->serviceTable->del($service->getIdentifier());
+            $this->registry->removeService($service);
+
+            throw $e;
+        }
     }
 
     public function onContainerKill(Service $service): void
@@ -41,30 +63,78 @@ final readonly class RegistryManager implements RegistryManagerInterface
         if (Service::TYPE_SERVICE === $service->type) {
             return;
         }
-        if ($this->registry instanceof CanToManageUpstream) {
-            $this->registry->removeUpstream($service);
-            if (0 === count($this->serviceTable->getUpstream($service->getIdentifier()))) {
-                $this->registry->removeService($service);
-            }
-            $this->reload();
 
-            return;
+        $this->serviceTable->removeUpstream($service->getIdentifier(), $service->path, $service->upstream);
+
+        try {
+            if ($this->registry instanceof CanToManageUpstream) {
+                $removeService = true;
+                foreach ($this->serviceTable->get($service->getIdentifier()) as $key => $value) {
+                    if (count($value['upstream'] ?? []) > 0) {
+                        $removeService = false;
+                    }
+                }
+                if ($removeService) {
+                    $this->registry->removeUpstream($service);
+                } else {
+                    $this->registry->removeUpstream($service);
+                }
+
+                $this->reload();
+
+                return;
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning('failed to remove service/upstream, performing rollback', ['service' => $service]);
+
+            $this->serviceTable->addUpstream($service->getIdentifier(), $service->path, $service->upstream);
+            $this->registry->addUpstream($service);
+
+            throw $e;
         }
 
-        $this->registry->removeService($service);
-        $this->reload();
+        try {
+            $this->registry->removeService($service);
+            $this->reload();
+        } catch (\Throwable $e) {
+            $this->logger->warning('failed to remove service/upstream, performing rollback', ['service' => $service]);
+
+            $this->serviceTable->addUpstream($service->getIdentifier(), $service->path, $service->upstream);
+            $this->registry->addService($service);
+
+            throw $e;
+        }
     }
 
     public function onServiceCreate(Service $service): void
     {
-        $this->registry->addService($service);
-        $this->reload();
+        try {
+            $this->serviceTable->addUpstream($service->getIdentifier(), $service->path, $service->upstream);
+            $this->registry->addService($service);
+            $this->reload();
+        } catch (\Throwable $e) {
+            $this->logger->warning('failed to add service, performing rollback', ['service' => $service]);
+
+            $this->serviceTable->del($service->getIdentifier());
+            $this->registry->removeService($service);
+
+            throw $e;
+        }
     }
 
     public function onServiceRemove(Service $service): void
     {
-        $this->registry->removeService($service);
-        $this->reload();
+        try {
+            $this->registry->removeService($service);
+            $this->reload();
+        } catch (\Throwable $e) {
+            $this->logger->warning('failed to remove service, performing rollback', ['service' => $service]);
+
+            $this->serviceTable->addUpstream($service->getIdentifier(), $service->path, $service->upstream);
+            $this->registry->addService($service);
+
+            throw $e;
+        }
     }
 
     public function init(): void

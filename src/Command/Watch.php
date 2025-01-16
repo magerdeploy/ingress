@@ -14,12 +14,17 @@ use PRSW\Ingress\SslCertificate\CertificateManager;
 use Psl\Async\Scheduler;
 use Psl\DateTime\Duration;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use function Amp\async;
 
+#[AsCommand(
+    name: 'watch',
+    description: 'watch incoming docker event and auto register to defined registry'
+)]
 final class Watch extends Command
 {
     public function __construct(
@@ -30,7 +35,7 @@ final class Watch extends Command
         private readonly SslCertificateTable $sslCertificateTable,
         private readonly CertificateManager $certificateManager,
     ) {
-        parent::__construct('watch');
+        parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

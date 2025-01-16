@@ -67,6 +67,15 @@ abstract class AbstractTable
         return true;
     }
 
+    public function unsetField(string $key, string $field): void
+    {
+        if (!$this->exist($key)) {
+            return;
+        }
+
+        unset($this->data[$key][$field]);
+    }
+
     public function load(): void
     {
         $fromStorage = $this->storage->load($this->getName());

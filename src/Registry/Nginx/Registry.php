@@ -60,12 +60,6 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
     public function addService(Service $service): void
     {
-        if (!exists($this->options['nginx_vhost_dir'])) {
-            createDirectoryRecursively($this->options['nginx_vhost_dir'], 0755);
-        }
-
-        $this->serviceTable->addUpstream($service->getIdentifier(), $service->upstream);
-
         $this->refresh($service);
 
         $this->logger->info('nginx vhost added', ['service' => $service]);
@@ -82,7 +76,6 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
         deleteFile($fileName);
 
-        $this->serviceTable->del($service->getIdentifier());
         $this->logger->info('nginx vhost deleted', ['service' => $service]);
     }
 
@@ -107,23 +100,29 @@ final readonly class Registry implements RegistryInterface, Reloadable, Initiali
 
     public function addUpstream(Service $service): void
     {
-        $this->serviceTable->addUpstream($service->getIdentifier(), $service->upstream);
         $this->refresh($service);
+
+        $this->logger->info('nginx vhost upstream added', ['service' => $service]);
     }
 
     public function removeUpstream(Service $service): void
     {
-        $this->serviceTable->removeUpstream($service->getIdentifier(), $service->upstream);
         $this->refresh($service);
+
+        $this->logger->info('nginx vhost upstream deleted', ['service' => $service]);
     }
 
     public function refresh(Service $service): void
     {
+        if (!exists($this->options['nginx_vhost_dir'])) {
+            createDirectoryRecursively($this->options['nginx_vhost_dir'], 0755);
+        }
+
         $fileName = $this->options['nginx_vhost_dir'].'/'.$service->getIdentifier();
-        $upstream = $this->serviceTable->getUpstream($service->getIdentifier());
+        $upstreams = $this->serviceTable->get($service->getIdentifier());
 
         $vhost = $this->twig->render('nginx/site-conf.html.twig', [
-            'upstream' => $upstream,
+            'upstream' => $upstreams,
             'path' => $service->path,
             'domain' => $service->domain,
         ] + $this->dumpCertificate($service->domain));

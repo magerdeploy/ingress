@@ -1,33 +1,41 @@
 #!/usr/bin/env php
 <?php
 
+declare(strict_types=1);
+
 require __DIR__.'/../vendor/autoload.php';
 
 use DI\ContainerBuilder;
+use PRSW\Ingress\Command\Watch;
 use PRSW\Ingress\ConsoleApplication;
 use PRSW\Ingress\ContainerDefinition;
-use PRSW\Ingress\Command\Watch;
+use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 use Symfony\Component\Dotenv\Dotenv;
 
 use function Amp\async;
 
-require_once __DIR__ . '/../src/constant.php';
+require_once __DIR__.'/../src/constant.php';
 
 error_reporting(~E_WARNING);
 
 $dotenv = new Dotenv();
-$dotenv->loadEnv(__DIR__ . '/../.env');
+$dotenv->loadEnv(__DIR__.'/../.env');
 $containerBuilder = new ContainerBuilder();
 $containerBuilder->addDefinitions(ContainerDefinition::getDefinition());
 $containerBuilder->useAttributes(true);
 $containerBuilder->useAutowiring(true);
 
+$container = $containerBuilder->build();
+
 $app = new ConsoleApplication('Swarm Ingress', 'v0.1.0');
 $app->setAutoExit(false);
 $app->configureVerbosityLevel();
 
-$container = $containerBuilder->build();
+$app->setCommandLoader(new ContainerCommandLoader(
+    $container,
+    [
+        'watch' => Watch::class,
+    ]
+));
 
-$app->add($container->get(Watch::class));
-
-async(fn() => $app->run())->await();
+async(static fn () => $app->run())->await();
